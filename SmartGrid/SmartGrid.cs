@@ -67,12 +67,15 @@ namespace SmartGrid
         public List<Node> Nodes = new List<Node>();
         public List<Way> Ways = new List<Way>();
         public List<Relation> Relations = new List<Relation>();
+        public XmlDocument Document = new XmlDocument();
 
-        public void LoadOSM(XmlDocument osm, bool verbose = false, bool validate = true)
+        public void LoadOSM(XmlDocument osm, bool verbose = false, bool validate = true, bool flush = true)
         {
-            for (int i = 0; i < osm.FirstChild.NextSibling.ChildNodes.Count; i++)
+            Document = osm;
+
+            for (int i = 0; i < Document.FirstChild.NextSibling.ChildNodes.Count; i++)
             {
-                var osmItem = osm.FirstChild.NextSibling.ChildNodes.Item(i);
+                var osmItem = Document.FirstChild.NextSibling.ChildNodes.Item(i);
 
                 switch (osmItem.Name.ToLower())
                 {
@@ -230,12 +233,16 @@ namespace SmartGrid
                         break;
                 }
             }
+
+            if (flush)
+                Document = new XmlDocument();
         }
-        public void LoadOSM(string osmPath)
+
+        public void LoadOSM(string osmPath, bool verbose = false, bool validate = true, bool flush = true)
         {
             XmlDocument osm = new XmlDocument();
             osm.Load(osmPath);
-            LoadOSM(osm);
+            LoadOSM(osm, verbose: verbose, validate: validate, flush: flush);
         }
 
         public void WriteJsons(string outFolder) {
@@ -301,6 +308,48 @@ namespace SmartGrid
                     Console.ReadLine();
                     break;
             }
+        }
+    }
+
+    public static class Extensions {
+        public static List<XmlNode> Where(this XmlNodeList self, Predicate<XmlNode> predicate) {
+            List<XmlNode> newlist = new List<XmlNode>();
+
+            for (int i = 0; i < self.Count; i++)
+            {
+                if(predicate.Invoke(self[i]) == true) {
+                    newlist.Add(self[i]);
+                }
+            }
+
+            return newlist;
+        }
+
+        public static bool Has(this XmlNodeList self, Predicate<XmlNode> predicate) {
+            List<XmlNode> newlist = new List<XmlNode>();
+
+            for (int i = 0; i < self.Count; i++)
+            {
+                if (predicate.Invoke(self[i]) == true)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        //public static List<XmlNode> Where(this XmlNode self, Predicate<XmlNode> predicate)
+        //{
+        //    List<XmlNode> newlist = new List<XmlNode>();
+
+        //    predicate.in
+
+        //    return newlist;
+        //}
+
+        public static string ToJson(this object self, Newtonsoft.Json.Formatting format = Newtonsoft.Json.Formatting.Indented) {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(self, format);
         }
     }
 }

@@ -10,7 +10,7 @@ namespace SmartGrid
 {
     class Program
     {
-        static void print(XmlNode node, string prefix = "", Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None) {
+        static void Print(XmlNode node, string prefix = "", Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None) {
             Console.Write($"{prefix} {Newtonsoft.Json.JsonConvert.SerializeXmlNode(node, formatting)}");
         }
 
@@ -39,20 +39,21 @@ namespace SmartGrid
             Console.WriteLine("Verbose on load (y/n): ");
             var verbose = (Console.ReadLine().ToLower() == "y");
 
-            sm.LoadOSM(osm, verbose: verbose);
+            sm.LoadOSM(osm, verbose: verbose, flush: true);
 
-            Console.WriteLine(" osm loaded");
+            //Console.WriteLine(" osm loaded");
 
-            var extension = "";
-            while (extension != "all" && extension != "json" && extension != "csv")
-            {
-                Console.WriteLine("extensions to output (all|json|csv): ");
-                extension = Console.ReadLine();
-            }
+            //var extension = "";
+            //while (extension != "all" && extension != "json" && extension != "csv")
+            //{
+            //    Console.WriteLine("extensions to output (all|json|csv): ");
+            //    extension = Console.ReadLine();
+            //}
 
-            Console.WriteLine(" writing to SmartGrid folder ...");
-            sm.WriteToFile(extension: extension);
+            //Console.WriteLine(" writing to SmartGrid folder ...");
+            //sm.WriteToFile(extension: extension);
 
+            //Console.WriteLine(sm.Document.ChildNodes[1].ChildNodes[2].ChildNodes.Where(x => x.Name == "tag").ToJson());
 
             Console.WriteLine("Done");
             Console.ReadLine();
