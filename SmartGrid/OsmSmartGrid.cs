@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Xml;
 
-namespace SmartGrid
+namespace OsmSmartGrid
 {
     public struct Bounds
     {
@@ -61,7 +61,7 @@ namespace SmartGrid
         public Dictionary<string, string> Tag { get; set; }
     }
 
-    public class SmartGrid
+    public class OsmSmartGrid
     {
         public Bounds Bounds = new Bounds();
         public List<Node> Nodes = new List<Node>();
@@ -84,7 +84,8 @@ namespace SmartGrid
                         Bounds.MinLon = double.Parse(osmItem.Attributes.GetNamedItem("minlon").Value);
 
                         if (verbose)
-                            Console.WriteLine($"Bounds << {Bounds.MinLat} {Bounds.MinLon} {Bounds.MaxLat} {Bounds.MaxLon}");
+                            Console.WriteLine(
+                                $"Bounds << {Bounds.MinLat} {Bounds.MinLon} {Bounds.MaxLat} {Bounds.MaxLon}");
 
                         break;
 
@@ -112,7 +113,8 @@ namespace SmartGrid
                                 switch (n_j.Name)
                                 {
                                     case "tag":
-                                        n.Tag.Add(n_j.Attributes.GetNamedItem("k").Value, n_j.Attributes.GetNamedItem("v").Value);
+                                        n.Tag.Add(n_j.Attributes.GetNamedItem("k").Value,
+                                            n_j.Attributes.GetNamedItem("v").Value);
                                         break;
                                     default:
                                         if (validate)
@@ -125,7 +127,8 @@ namespace SmartGrid
                             }
 
                         if (verbose)
-                            Console.WriteLine($"Nodes <<   {n.ID,-12} {n.Lat,-12} {n.Lon,-12} {n.Timestamp,-20}  {n.User}");
+                            Console.WriteLine(
+                                $"Nodes <<   {n.ID,-12} {n.Lat,-12} {n.Lon,-12} {n.Timestamp,-20}  {n.User}");
 
                         Nodes.Add(n);
 
@@ -156,7 +159,8 @@ namespace SmartGrid
                                         w.NodeRefs.Add(ulong.Parse(w_j.Attributes.GetNamedItem("ref").Value));
                                         break;
                                     case "tag":
-                                        w.Tag.Add(w_j.Attributes.GetNamedItem("k").Value, w_j.Attributes.GetNamedItem("v").Value);
+                                        w.Tag.Add(w_j.Attributes.GetNamedItem("k").Value,
+                                            w_j.Attributes.GetNamedItem("v").Value);
                                         break;
                                     default:
                                         if (validate)
@@ -169,7 +173,8 @@ namespace SmartGrid
                             }
 
                         if (verbose)
-                            Console.WriteLine($"Ways <<   {w.ID,-12} {w.NodeRefs.Count}-vertx  {w.Timestamp,-20}  {w.User}");
+                            Console.WriteLine(
+                                $"Ways <<   {w.ID,-12} {w.NodeRefs.Count}-vertx  {w.Timestamp,-20}  {w.User}");
 
                         Ways.Add(w);
 
@@ -205,7 +210,8 @@ namespace SmartGrid
                                         });
                                         break;
                                     case "tag":
-                                        r.Tag.Add(r_j.Attributes.GetNamedItem("k").Value, r_j.Attributes.GetNamedItem("v").Value);
+                                        r.Tag.Add(r_j.Attributes.GetNamedItem("k").Value,
+                                            r_j.Attributes.GetNamedItem("v").Value);
                                         break;
                                     default:
                                         if (validate)
@@ -218,7 +224,8 @@ namespace SmartGrid
                             }
 
                         if (verbose)
-                            Console.WriteLine($"Relation <<   {r.ID,-12} {r.Members.Count}-members  {r.Timestamp,-20}  {r.User}");
+                            Console.WriteLine(
+                                $"Relation <<   {r.ID,-12} {r.Members.Count}-members  {r.Timestamp,-20}  {r.User}");
 
                         Relations.Add(r);
 
@@ -231,6 +238,7 @@ namespace SmartGrid
                 }
             }
         }
+
         public void LoadOSM(string osmPath)
         {
             XmlDocument osm = new XmlDocument();
@@ -238,15 +246,21 @@ namespace SmartGrid
             LoadOSM(osm);
         }
 
-        public void WriteJsons(string outFolder) {
+        public void WriteJsons(string outFolder)
+        {
             Directory.CreateDirectory($"{outFolder}\\JSON");
-            File.WriteAllText($"{outFolder}\\JSON\\Bounds.json", Newtonsoft.Json.JsonConvert.SerializeObject(Bounds, Newtonsoft.Json.Formatting.Indented));
-            File.WriteAllText($"{outFolder}\\JSON\\Nodes.json", Newtonsoft.Json.JsonConvert.SerializeObject(Nodes, Newtonsoft.Json.Formatting.Indented));
-            File.WriteAllText($"{outFolder}\\JSON\\Ways.json", Newtonsoft.Json.JsonConvert.SerializeObject(Ways, Newtonsoft.Json.Formatting.Indented));
-            File.WriteAllText($"{outFolder}\\JSON\\Relations.json", Newtonsoft.Json.JsonConvert.SerializeObject(Relations, Newtonsoft.Json.Formatting.Indented));
+            File.WriteAllText($"{outFolder}\\JSON\\Bounds.json",
+                Newtonsoft.Json.JsonConvert.SerializeObject(Bounds, Newtonsoft.Json.Formatting.Indented));
+            File.WriteAllText($"{outFolder}\\JSON\\Nodes.json",
+                Newtonsoft.Json.JsonConvert.SerializeObject(Nodes, Newtonsoft.Json.Formatting.Indented));
+            File.WriteAllText($"{outFolder}\\JSON\\Ways.json",
+                Newtonsoft.Json.JsonConvert.SerializeObject(Ways, Newtonsoft.Json.Formatting.Indented));
+            File.WriteAllText($"{outFolder}\\JSON\\Relations.json",
+                Newtonsoft.Json.JsonConvert.SerializeObject(Relations, Newtonsoft.Json.Formatting.Indented));
         }
 
-        public void WriteCsvs(string outFolder) {
+        public void WriteCsvs(string outFolder)
+        {
             Directory.CreateDirectory($"{outFolder}\\CSV");
             using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Bounds.csv"))
             {
@@ -259,7 +273,8 @@ namespace SmartGrid
                 fileStream.WriteLine($"id,visible,version,changeset,timestamp,user,uid,lat,lon,tag");
                 foreach (var n in Nodes)
                 {
-                    fileStream.WriteLine($"{n.ID},{n.Visible},{n.Version},{n.Changeset},{n.Timestamp},{n.User},{n.Uid},{n.Lat},{n.Lon},{Newtonsoft.Json.JsonConvert.SerializeObject(n.Tag).Replace(",", "#comma#")}");
+                    fileStream.WriteLine(
+                        $"{n.ID},{n.Visible},{n.Version},{n.Changeset},{n.Timestamp},{n.User},{n.Uid},{n.Lat},{n.Lon},{Newtonsoft.Json.JsonConvert.SerializeObject(n.Tag).Replace(",", "#comma#")}");
                 }
             }
             using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Relations.csv"))
@@ -267,7 +282,8 @@ namespace SmartGrid
                 fileStream.WriteLine($"id,visible,version,changeset,timestamp,user,uid,members,tag");
                 foreach (var r in Relations)
                 {
-                    fileStream.WriteLine($"{r.ID},{r.Visible},{r.Version},{r.Changeset},{r.Timestamp},{r.User},{r.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(r.Members).Replace(",", "#comma#")},{Newtonsoft.Json.JsonConvert.SerializeObject(r.Tag).Replace(",", "#comma#")}");
+                    fileStream.WriteLine(
+                        $"{r.ID},{r.Visible},{r.Version},{r.Changeset},{r.Timestamp},{r.User},{r.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(r.Members).Replace(",", "#comma#")},{Newtonsoft.Json.JsonConvert.SerializeObject(r.Tag).Replace(",", "#comma#")}");
                 }
             }
             using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Ways.csv"))
@@ -275,7 +291,8 @@ namespace SmartGrid
                 fileStream.WriteLine($"id,visible,version,changeset,timestamp,user,uid,refs,tag");
                 foreach (var w in Ways)
                 {
-                    fileStream.WriteLine($"{w.ID},{w.Visible},{w.Version},{w.Changeset},{w.Timestamp},{w.User},{w.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(w.NodeRefs).Replace(",", "#comma#")},{Newtonsoft.Json.JsonConvert.SerializeObject(w.Tag).Replace(",", "#comma#")}");
+                    fileStream.WriteLine(
+                        $"{w.ID},{w.Visible},{w.Version},{w.Changeset},{w.Timestamp},{w.User},{w.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(w.NodeRefs).Replace(",", "#comma#")},{Newtonsoft.Json.JsonConvert.SerializeObject(w.Tag).Replace(",", "#comma#")}");
                 }
             }
         }
