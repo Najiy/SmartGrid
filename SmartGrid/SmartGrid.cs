@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-
 /*
-This class will serve as the base map structure that other map structures can cast to
-    */
+ * This class will serve as the base map structure that other map structures can cast to
+ */
 
 namespace SmartGrid
 {
@@ -20,6 +19,7 @@ namespace SmartGrid
     {
         public string FromNode { get; set; }
         public string ToNode { get; set; }
+        public Dictionary<string, string> Descriptors { get; set; }
     }
 
     class SmartGrid
