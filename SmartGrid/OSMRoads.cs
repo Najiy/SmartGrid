@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml;
+using SmartGrid;
 
-namespace OsmSmartGrid
+namespace OSMRoads
 {
     public struct Bounds
     {
@@ -61,14 +62,14 @@ namespace OsmSmartGrid
         public Dictionary<string, string> Tag { get; set; }
     }
 
-    public class OsmSmartGrid
+    public class OSMRoads : IMapParser
     {
         public Bounds Bounds = new Bounds();
         public List<Node> Nodes = new List<Node>();
         public List<Way> Ways = new List<Way>();
         public List<Relation> Relations = new List<Relation>();
 
-        public void LoadOSM(XmlDocument osm, bool verbose = false, bool validate = true)
+        public void LoadFile(XmlDocument osm, bool verbose = false)
         {
             for (int i = 0; i < osm.FirstChild.NextSibling.ChildNodes.Count; i++)
             {
@@ -117,7 +118,7 @@ namespace OsmSmartGrid
                                             n_j.Attributes.GetNamedItem("v").Value);
                                         break;
                                     default:
-                                        if (validate)
+                                        if (verbose)
                                         {
                                             Console.WriteLine("undefined way child node");
                                             Console.ReadLine();
@@ -163,7 +164,7 @@ namespace OsmSmartGrid
                                             w_j.Attributes.GetNamedItem("v").Value);
                                         break;
                                     default:
-                                        if (validate)
+                                        if (verbose)
                                         {
                                             Console.WriteLine("undefined way child node");
                                             Console.ReadLine();
@@ -214,7 +215,7 @@ namespace OsmSmartGrid
                                             r_j.Attributes.GetNamedItem("v").Value);
                                         break;
                                     default:
-                                        if (validate)
+                                        if (verbose)
                                         {
                                             Console.WriteLine("undefined way child node");
                                             Console.ReadLine();
@@ -239,84 +240,109 @@ namespace OsmSmartGrid
             }
         }
 
-        public void LoadOSM(string osmPath)
+        public void LoadFile(string osmPath, bool verbose = false )
         {
             XmlDocument osm = new XmlDocument();
             osm.Load(osmPath);
-            LoadOSM(osm);
+            LoadFile(osm, verbose);
         }
 
-        public void WriteJsons(string outFolder)
+        public void WriteJsons(string outFolder, string filenamePostfix = "")
         {
             Directory.CreateDirectory($"{outFolder}\\JSON");
-            File.WriteAllText($"{outFolder}\\JSON\\Bounds.json",
+            File.WriteAllText($"{outFolder}\\JSON\\Bounds_{filenamePostfix}.json",
                 Newtonsoft.Json.JsonConvert.SerializeObject(Bounds, Newtonsoft.Json.Formatting.Indented));
-            File.WriteAllText($"{outFolder}\\JSON\\Nodes.json",
+            File.WriteAllText($"{outFolder}\\JSON\\Nodes_{filenamePostfix}.json",
                 Newtonsoft.Json.JsonConvert.SerializeObject(Nodes, Newtonsoft.Json.Formatting.Indented));
-            File.WriteAllText($"{outFolder}\\JSON\\Ways.json",
+            File.WriteAllText($"{outFolder}\\JSON\\Ways_{filenamePostfix}.json",
                 Newtonsoft.Json.JsonConvert.SerializeObject(Ways, Newtonsoft.Json.Formatting.Indented));
-            File.WriteAllText($"{outFolder}\\JSON\\Relations.json",
+            File.WriteAllText($"{outFolder}\\JSON\\Relations_{filenamePostfix}.json",
                 Newtonsoft.Json.JsonConvert.SerializeObject(Relations, Newtonsoft.Json.Formatting.Indented));
         }
 
-        public void WriteCsvs(string outFolder)
+        public void WriteCsvs(string outFolder, bool verbose = false, string filenamePostfix = "")
         {
+            var nodecount = Nodes.Count;
+            var linkcount = Ways.Count;
+            var relationscount = Relations.Count;
+            var totalcount = nodecount + linkcount + relationscount;
+            var i = 0;
+
             Directory.CreateDirectory($"{outFolder}\\CSV");
-            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Bounds.csv"))
+            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Bounds_{filenamePostfix}.csv"))
             {
                 fileStream.WriteLine($"minlat,minlon,maxlat,maxlon");
 
                 fileStream.WriteLine($"{Bounds.MinLat},{Bounds.MinLon},{Bounds.MaxLat},{Bounds.MaxLon}");
             }
-            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Nodes.csv"))
+            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Nodes_{filenamePostfix}.csv"))
             {
-                fileStream.WriteLine($"id,visible,version,changeset,timestamp,user,uid,lat,lon,tag");
+                fileStream.WriteLine($"id,lat,lon,visible,version,changeset,timestamp,user,uid,tag");
                 foreach (var n in Nodes)
                 {
                     fileStream.WriteLine(
-                        $"{n.ID},{n.Visible},{n.Version},{n.Changeset},{n.Timestamp},{n.User},{n.Uid},{n.Lat},{n.Lon},{Newtonsoft.Json.JsonConvert.SerializeObject(n.Tag).Replace(",", "#comma#")}");
+                        $"{n.ID},{n.Lat},{n.Lon},{n.Visible},{n.Version},{n.Changeset},{n.Timestamp},{n.User},{n.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(n.Tag).Replace(",", "#comma#")}"
+                        );
+
+                    i++;
+                    if(verbose)
+                        Console.WriteLine($" {i}/{totalcount} writing node {n.ID} {n.Lat} {n.Lon} {n.Timestamp} {n.User}");
                 }
             }
-            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Relations.csv"))
+            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Relations_{filenamePostfix}.csv"))
             {
                 fileStream.WriteLine($"id,visible,version,changeset,timestamp,user,uid,members,tag");
                 foreach (var r in Relations)
                 {
                     fileStream.WriteLine(
                         $"{r.ID},{r.Visible},{r.Version},{r.Changeset},{r.Timestamp},{r.User},{r.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(r.Members).Replace(",", "#comma#")},{Newtonsoft.Json.JsonConvert.SerializeObject(r.Tag).Replace(",", "#comma#")}");
+
+                    i++;
+                    if(verbose)
+                        Console.WriteLine($" {i}/{totalcount} writing relation {r.ID} {r.Timestamp} {r.User}");
                 }
             }
-            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Ways.csv"))
+            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Ways_{filenamePostfix}.csv"))
             {
                 fileStream.WriteLine($"id,visible,version,changeset,timestamp,user,uid,refs,tag");
                 foreach (var w in Ways)
                 {
                     fileStream.WriteLine(
                         $"{w.ID},{w.Visible},{w.Version},{w.Changeset},{w.Timestamp},{w.User},{w.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(w.NodeRefs).Replace(",", "#comma#")},{Newtonsoft.Json.JsonConvert.SerializeObject(w.Tag).Replace(",", "#comma#")}");
+
+                    i++;
+                    if(verbose)
+                        Console.WriteLine($" {i}/{totalcount} writing way {w.ID} {w.Timestamp} {w.User}");
                 }
             }
         }
 
-        public void WriteToFile(string outFolder = "SmartGrid", string extension = "json")
+        public void WriteToFile(string outFolder = "OSMSmartGrid", string extension = "json", string filenamePostfix = "", bool verbose = false, bool pauseWhenDone = false)
         {
             Directory.CreateDirectory(outFolder);
 
             switch (extension)
             {
                 case "json":
-                    WriteJsons(outFolder);
+                    WriteJsons(outFolder, filenamePostfix: filenamePostfix);
                     break;
                 case "csv":
-                    WriteCsvs(outFolder);
+                    WriteCsvs(outFolder, verbose: verbose, filenamePostfix: filenamePostfix);
                     break;
                 case "all":
-                    WriteJsons(outFolder);
-                    WriteCsvs(outFolder);
+                    WriteJsons(outFolder, filenamePostfix: filenamePostfix);
+                    WriteCsvs(outFolder, verbose:verbose, filenamePostfix:filenamePostfix);
                     break;
                 default:
                     Console.WriteLine("no output extensions specified");
                     Console.ReadLine();
                     break;
+            }
+
+            if (pauseWhenDone)
+            {
+                Console.WriteLine($" done writing to {extension}");
+                Console.ReadLine();
             }
         }
     }

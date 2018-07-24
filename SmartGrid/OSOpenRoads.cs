@@ -7,8 +7,9 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Xml;
-using OsmSmartGrid;
-namespace SmartGrid
+using SmartGrid;
+
+namespace OSOpenRoads
 {
     public struct Bounds
     {
@@ -17,8 +18,6 @@ namespace SmartGrid
         public double MaxLat { get; set; }
         public double MaxLon { get; set; }
     }
-
-
     public struct RoadNode
     {
         public string Id { get; set; }
@@ -54,13 +53,13 @@ namespace SmartGrid
         public string RoadNumberToid { get; set; }
     }
 
-    public class OpenRoadSmartGrid
+    public class OSOpenRoads : IMapParser
     {
-
         public Bounds Bounds;
         public List<RoadLink> RoadLinks = new List<RoadLink>();
         public List<RoadNode> RoadNodes = new List<RoadNode>();
-        public void LoadOpenRoad(XmlDocument or)
+
+        public void LoadFile(XmlDocument or, bool verbose = false)
         {
 
             XmlNode node = or.DocumentElement.FirstChild;
@@ -88,6 +87,9 @@ namespace SmartGrid
                                         Bounds.MaxLon = double.Parse(UpperCorner[1]);
                                         break;
                                 }
+
+                                if (verbose)
+                                    Console.WriteLine($"Bounds << MaxLat {Bounds.MaxLat}  MaxLon {Bounds.MaxLon}  MinLat {Bounds.MinLat}  MinLon {Bounds.MinLon}");
                             }
                             break;
 
@@ -117,56 +119,62 @@ namespace SmartGrid
                                             .GetNamedItem("codeSpace").Value;
                                         roadNode.RoadType = currentNode.ChildNodes.Item(z).InnerText;
                                         break;
-
-
                                 }
 
                             }
                             RoadNodes.Add(roadNode);
+
+                            if (verbose)
+                                Console.WriteLine($"Node << {roadNode.Id} {roadNode.Latitude} {roadNode.Longitude} {roadNode.RoadType}");
+
                             break;
                         case "road:RoadLink":
-                        {
-                            var roadLink = new RoadLink {Id = currentNode.Attributes.GetNamedItem("gml:id").Value};
-                            var blv = currentNode.ChildNodes.Where(x => x.Name == "net:beginLifespanVersion");
-                            roadLink.BeginLifespanVersion =
-                                Convert.ToBoolean(blv.FirstOrDefault()?.Attributes.GetNamedItem("xsi:nil").Value);
-                            var inn = currentNode.ChildNodes.Where(x => x.Name == "net:inNetwork");
-                            roadLink.InNetwork =
-                                Convert.ToBoolean(inn.FirstOrDefault()?.Attributes.GetNamedItem("xsi:nil").Value);
-                            var clg = currentNode.ChildNodes.Where(x => x.Name == "net:centrelineGeometry");
-                            roadLink.CentrelineGeometry = clg.FirstOrDefault()?.InnerText;
-                            var fic = currentNode.ChildNodes.Where(x => x.Name == "net:fictitious");
-                            roadLink.Fictitious = Convert.ToBoolean(fic.FirstOrDefault()?.InnerText);
-                            var sn = currentNode.ChildNodes.Where(x => x.Name == "net:startNode");
-                            roadLink.StartNode = sn.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
-                            var en = currentNode.ChildNodes.Where(x => x.Name == "net:endNode");
-                            roadLink.StartNode = en.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
-                            var rc = currentNode.ChildNodes.Where(x => x.Name == "road:roadClassification");
-                            roadLink.RoadClassification = rc.FirstOrDefault()?.InnerText;
-                            var rf = currentNode.ChildNodes.Where(x => x.Name == "road:roadFunction");
-                            roadLink.RoadFunction = rf.FirstOrDefault()?.InnerText;
-                            var fow = currentNode.ChildNodes.Where(x => x.Name == "road:formOfWay");
-                            roadLink.FormOfWay = fow.FirstOrDefault()?.InnerText;
-                            var len = currentNode.ChildNodes.Where(x => x.Name == "road:length");
-                            roadLink.Length = len.FirstOrDefault()?.InnerText;
-                            roadLink.UnitsOfMeasure = len.FirstOrDefault()?.Attributes.GetNamedItem("uom").Value;
-                            var loop = currentNode.ChildNodes.Where(x => x.Name == "road:loop");
-                            roadLink.Loop = Convert.ToBoolean(loop.FirstOrDefault()?.InnerText);
-                            var pr = currentNode.ChildNodes.Where(x => x.Name == "road:primaryRoute");
-                            roadLink.PrimaryRoute = Convert.ToBoolean(pr.FirstOrDefault()?.InnerText);
-                            var tr = currentNode.ChildNodes.Where(x => x.Name == "road:trunkRoad");
-                            roadLink.TrunkRoad = Convert.ToBoolean(tr.FirstOrDefault()?.InnerText);
-                            var rn = currentNode.ChildNodes.Where(x => x.Name.Contains("road:name"));
-                            roadLink.RoadName = rn.FirstOrDefault()?.InnerText;
-                            var nametoid = currentNode.ChildNodes.Where(x => x.Name == "road:roadNameTOID");
-                            roadLink.RoadNameToid =
-                                nametoid.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
-                            var numbertoid = currentNode.ChildNodes.Where(x => x.Name == "road:roadNumberTOID");
-                            roadLink.RoadNumberToid =
-                                numbertoid.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
-                            RoadLinks.Add(roadLink);
-                            break;
-                        }
+                            {
+                                var roadLink = new RoadLink { Id = currentNode.Attributes.GetNamedItem("gml:id").Value };
+                                var blv = currentNode.ChildNodes.Where(x => x.Name == "net:beginLifespanVersion");
+                                roadLink.BeginLifespanVersion =
+                                    Convert.ToBoolean(blv.FirstOrDefault()?.Attributes.GetNamedItem("xsi:nil").Value);
+                                var inn = currentNode.ChildNodes.Where(x => x.Name == "net:inNetwork");
+                                roadLink.InNetwork =
+                                    Convert.ToBoolean(inn.FirstOrDefault()?.Attributes.GetNamedItem("xsi:nil").Value);
+                                var clg = currentNode.ChildNodes.Where(x => x.Name == "net:centrelineGeometry");
+                                roadLink.CentrelineGeometry = clg.FirstOrDefault()?.InnerText;
+                                var fic = currentNode.ChildNodes.Where(x => x.Name == "net:fictitious");
+                                roadLink.Fictitious = Convert.ToBoolean(fic.FirstOrDefault()?.InnerText);
+                                var sn = currentNode.ChildNodes.Where(x => x.Name == "net:startNode");
+                                roadLink.StartNode = sn.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
+                                var en = currentNode.ChildNodes.Where(x => x.Name == "net:endNode");
+                                roadLink.StartNode = en.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
+                                var rc = currentNode.ChildNodes.Where(x => x.Name == "road:roadClassification");
+                                roadLink.RoadClassification = rc.FirstOrDefault()?.InnerText;
+                                var rf = currentNode.ChildNodes.Where(x => x.Name == "road:roadFunction");
+                                roadLink.RoadFunction = rf.FirstOrDefault()?.InnerText;
+                                var fow = currentNode.ChildNodes.Where(x => x.Name == "road:formOfWay");
+                                roadLink.FormOfWay = fow.FirstOrDefault()?.InnerText;
+                                var len = currentNode.ChildNodes.Where(x => x.Name == "road:length");
+                                roadLink.Length = len.FirstOrDefault()?.InnerText;
+                                roadLink.UnitsOfMeasure = len.FirstOrDefault()?.Attributes.GetNamedItem("uom").Value;
+                                var loop = currentNode.ChildNodes.Where(x => x.Name == "road:loop");
+                                roadLink.Loop = Convert.ToBoolean(loop.FirstOrDefault()?.InnerText);
+                                var pr = currentNode.ChildNodes.Where(x => x.Name == "road:primaryRoute");
+                                roadLink.PrimaryRoute = Convert.ToBoolean(pr.FirstOrDefault()?.InnerText);
+                                var tr = currentNode.ChildNodes.Where(x => x.Name == "road:trunkRoad");
+                                roadLink.TrunkRoad = Convert.ToBoolean(tr.FirstOrDefault()?.InnerText);
+                                var rn = currentNode.ChildNodes.Where(x => x.Name.Contains("road:name"));
+                                roadLink.RoadName = rn.FirstOrDefault()?.InnerText;
+                                var nametoid = currentNode.ChildNodes.Where(x => x.Name == "road:roadNameTOID");
+                                roadLink.RoadNameToid =
+                                    nametoid.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
+                                var numbertoid = currentNode.ChildNodes.Where(x => x.Name == "road:roadNumberTOID");
+                                roadLink.RoadNumberToid =
+                                    numbertoid.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
+
+                                if (verbose)
+                                    Console.WriteLine($"Link << {roadLink.Id} {roadLink.RoadName} {roadLink.RoadType} {roadLink.RoadClassification}");
+
+                                RoadLinks.Add(roadLink);
+                                break;
+                            }
                     }
 
 
@@ -177,67 +185,97 @@ namespace SmartGrid
 
         }
 
-        public void WriteCsvs(string outFolder)
+        public void LoadFile(string osmPath, bool verbose = false)
+        {
+            XmlDocument osm = new XmlDocument();
+            osm.Load(osmPath);
+            LoadFile(osm, verbose);
+        }
+
+        public void WriteCsvs(string outFolder, bool verbose = false, string filenamePostfix = "")
         {
             Directory.CreateDirectory($"{outFolder}\\CSV");
-            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Bounds.csv"))
+            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Bounds_{filenamePostfix}.csv"))
             {
                 fileStream.WriteLine($"minlat,minlon,maxlat,maxlon");
 
                 fileStream.WriteLine($"{Bounds.MinLat},{Bounds.MinLon},{Bounds.MaxLat},{Bounds.MaxLon}");
             }
-            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\RoadLinks.csv"))
+
+            var nodecount = RoadNodes.Count;
+            var linkcount = RoadLinks.Count;
+            var totalcount = nodecount + linkcount;
+
+
+            using (var fileStream = File.CreateText($"{outFolder}\\CSV\\RoadLinks_{filenamePostfix}.csv"))
             {
                 fileStream.WriteLine("id,start node,end node,begin lifespan version,centerline geometry" +
                                      ",fictitious,In Network, Road Classification,Road function,Road type,FormOfWay," +
                                      "RoadClassificationNumber,Length,Units,Loop,PrimaryRoute,TrunkRoad,RoadName," +
                                      "RoadNameTOID,RoadNumberTOID");
+
+                var i = 0;
                 foreach (var link in RoadLinks)
                 {
                     fileStream.WriteLine($"{link.Id},{link.StartNode},{link.EndNode},{link.BeginLifespanVersion},{link.CentrelineGeometry}" +
                                          $",{link.Fictitious},{link.InNetwork},{link.RoadClassification},{link.RoadClassification},{link.RoadType}" +
                                          $",{link.FormOfWay},{link.RoadClassificationNumber},{link.Length},{link.UnitsOfMeasure},{link.Loop}," +
                                          $"{link.PrimaryRoute},{link.TrunkRoad},{link.RoadName},{link.RoadNameToid},{link.RoadNumberToid}");
+
+                    i++;
+                    if (verbose)
+                        Console.WriteLine($" {i}/{totalcount} writing link {link.Id}");
                 }
             }
-            using (var fileStream = File.CreateText(($"{outFolder}\\CSV\\RoadNodes.csv")))
+            using (var fileStream = File.CreateText(($"{outFolder}\\CSV\\RoadNodes_{filenamePostfix}.csv")))
             {
-                fileStream.WriteLine("ID,BeginLifespanVersion,InNetwork,Latitude,Longitude,FormOfRoadNode,RoadType");
+                fileStream.WriteLine("ID,Latitude,Longitude,BeginLifespanVersion,InNetwork,FormOfRoadNode,RoadType");
+
+                var i = linkcount;
                 foreach (var node in RoadNodes)
                 {
-                    fileStream.WriteLine($"{node.Id},{node.BeginLifespanVersion},{node.InNetwork},{node.Latitude},{node.Longitude},{node.FormOfRoadNode},{node.RoadType}");
+                    fileStream.WriteLine($"{node.Id},{node.Latitude},{node.Longitude},{node.BeginLifespanVersion},{node.InNetwork},{node.FormOfRoadNode},{node.RoadType}");
+
+                    i++;
+                    if (verbose)
+                        Console.WriteLine($" {i}/{totalcount} writing node {node.Id} {node.Latitude} {node.Longitude}");
                 }
             }
         }
 
-        public void WriteJsons(string outFolder)
+        public void WriteJsons(string outFolder, string filenamePostfix = "")
         {
             Directory.CreateDirectory($"{outFolder}\\JSON");
-            File.WriteAllText($"{outFolder}\\JSON\\Bounds.json",
+            File.WriteAllText($"{outFolder}\\JSON\\Bounds_{filenamePostfix}.json",
                 Newtonsoft.Json.JsonConvert.SerializeObject(Bounds, Newtonsoft.Json.Formatting.Indented));
-            File.WriteAllText($"{outFolder}\\JSON\\RoadNodes.json",
+            File.WriteAllText($"{outFolder}\\JSON\\Nodes_{filenamePostfix}.json",
                 Newtonsoft.Json.JsonConvert.SerializeObject(RoadNodes, Newtonsoft.Json.Formatting.Indented));
-            File.WriteAllText($"{outFolder}\\JSON\\RoadLinks.json",
+            File.WriteAllText($"{outFolder}\\JSON\\Ways_{filenamePostfix}.json",
                 Newtonsoft.Json.JsonConvert.SerializeObject(RoadLinks, Newtonsoft.Json.Formatting.Indented));
         }
 
-        public void WriteToFile(string outFolder = "SmartGrid", string extension = "json")
+        public void WriteToFile(string outFolder = "ORSmartGrid", string extension = "json", string filenamePostfix = "", bool verbose = false, bool pauseWhenDone = false)
         {
             Directory.CreateDirectory(outFolder);
 
             switch (extension)
             {
                 case "json":
-                    WriteJsons(outFolder);
+                    WriteJsons(outFolder, filenamePostfix: filenamePostfix);
                     break;
                 case "csv":
-                    WriteCsvs(outFolder);
+                    WriteCsvs(outFolder, verbose: verbose, filenamePostfix: filenamePostfix);
                     break;
                 case "all":
-                    WriteJsons(outFolder);
-                    WriteCsvs(outFolder);
+                    WriteJsons(outFolder, filenamePostfix: filenamePostfix);
+                    WriteCsvs(outFolder, verbose: verbose, filenamePostfix: filenamePostfix);
                     break;
-               
+            }
+
+            if (pauseWhenDone)
+            {
+                Console.WriteLine($" done writing to {extension}");
+                Console.ReadLine();
             }
         }
     }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Xml;
 
-namespace OsmSmartGrid
+namespace SmartGrid
 {
     public static class Extensions
     {
