@@ -37,8 +37,6 @@ namespace SmartGrid
         public Dictionary<string, string> Descriptors { get; set; }
     }
 
-
-
     internal class SmartGrid
     {
         // the key will be ids and values the point themeselves, using dictionary so access to node is O(1)
