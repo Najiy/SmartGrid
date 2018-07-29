@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml;
 
 namespace SmartGrid
 {
-    interface IMapParser
+    internal interface IMapParser
     {
         void LoadFile(XmlDocument or, bool verbose = false);
 
@@ -20,12 +18,12 @@ namespace SmartGrid
         void WriteToFile(string outFolder = "ORSmartGrid", string extension = "json", string filenamePostfix = "", bool verbose = false, bool pauseWhenDone = false);
     }
 
-    public class MapProcessor {
+    public class MapProcessor
+    {
         public static void ProcessFolder(string outFolder = "MapProcessorResult", string inFolder = "MapProcessorInputs", bool verboseLoad = false, bool verboseWrite = false)
         {
             Directory.CreateDirectory(outFolder);
             Directory.CreateDirectory(inFolder);
-
 
             //foreach (var item in Directory.GetFiles(inFolder))
             //{
@@ -51,10 +49,12 @@ namespace SmartGrid
 
                         Console.ReadLine();
                         break;
+
                     case ".gml":
                         Console.WriteLine($"GML {Path.GetFileNameWithoutExtension(path)}");
                         Console.ReadLine();
                         break;
+
                     default:
                         Console.WriteLine("unknown extension");
                         Console.ReadLine();

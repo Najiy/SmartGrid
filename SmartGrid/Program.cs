@@ -1,22 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Xml;
-using System.Threading.Tasks;
-using System.Diagnostics;
-using System.Collections.Concurrent;
 using System.IO;
-using OSOpenRoads;
-using OSMRoads;
+using System.Xml;
 
 namespace SmartGrid
 {
-    class Program
+    internal class Program
     {
-        static void Print(XmlNode node, string prefix = "", Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None) {
+        private static void Print(XmlNode node, string prefix = "", Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None)
+        {
             Console.Write($"{prefix} {Newtonsoft.Json.JsonConvert.SerializeXmlNode(node, formatting)}");
         }
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             //string fileFormat = "";
 
@@ -38,8 +33,8 @@ namespace SmartGrid
         {
             OSOpenRoads.OSOpenRoads orsg = new OSOpenRoads.OSOpenRoads();
             XmlDocument gml = new XmlDocument();
-           
-            string filepath="";
+
+            string filepath = "";
             while (!File.Exists(filepath))
             {
                 Console.WriteLine("Enter the .gml filepath");
@@ -49,13 +44,12 @@ namespace SmartGrid
             orsg.LoadFile(gml, true);
             var extension = QueryExtension();
             orsg.WriteToFile(extension: extension, verbose: true);
-
         }
+
         private static void OsmLoad()
         {
             OSMRoads.OSMRoads sm = new OSMRoads.OSMRoads();
             XmlDocument osm = new XmlDocument();
-
 
             if (!File.Exists($@"map.osm"))
             {
@@ -71,7 +65,6 @@ namespace SmartGrid
             {
                 osm.Load($@"map.osm");
             }
-
 
             Console.WriteLine("Verbose on load (y/n): ");
             var verbose = (Console.ReadLine().ToLower() == "y");

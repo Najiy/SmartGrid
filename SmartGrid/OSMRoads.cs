@@ -1,9 +1,9 @@
-﻿using System;
+﻿using SmartGrid;
+using System;
 using System.Collections.Generic;
+using System.Device.Location;
 using System.IO;
-using System.Text;
 using System.Xml;
-using SmartGrid;
 
 namespace OSMRoads
 {
@@ -24,8 +24,8 @@ namespace OSMRoads
         public DateTime Timestamp { get; set; }
         public string User { get; set; }
         public UInt64 Uid { get; set; }
-        public double Lat { get; set; }
-        public double Lon { get; set; }
+        public GeoCoordinate Coordinate { get; set; }
+
         public Dictionary<string, string> Tag { get; set; }
     }
 
@@ -101,11 +101,14 @@ namespace OSMRoads
                             Timestamp = DateTime.Parse(osmItem.Attributes.GetNamedItem("timestamp").Value),
                             User = osmItem.Attributes.GetNamedItem("user").Value,
                             Uid = ulong.Parse(osmItem.Attributes.GetNamedItem("uid").Value),
-                            Lat = double.Parse(osmItem.Attributes.GetNamedItem("lat").Value),
-                            Lon = double.Parse(osmItem.Attributes.GetNamedItem("lon").Value),
                             Tag = new Dictionary<string, string>()
                         };
-
+                        GeoCoordinate coordinate = new GeoCoordinate()
+                        {
+                            Latitude = double.Parse(osmItem.Attributes.GetNamedItem("lat").Value),
+                            Longitude = double.Parse(osmItem.Attributes.GetNamedItem("lon").Value)
+                        };
+                        n.Coordinate = coordinate;
                         if (osmItem.HasChildNodes)
                             for (int j = 0; j < osmItem.ChildNodes.Count; j++)
                             {
@@ -117,6 +120,7 @@ namespace OSMRoads
                                         n.Tag.Add(n_j.Attributes.GetNamedItem("k").Value,
                                             n_j.Attributes.GetNamedItem("v").Value);
                                         break;
+
                                     default:
                                         if (verbose)
                                         {
@@ -129,11 +133,12 @@ namespace OSMRoads
 
                         if (verbose)
                             Console.WriteLine(
-                                $"Nodes <<   {n.ID,-12} {n.Lat,-12} {n.Lon,-12} {n.Timestamp,-20}  {n.User}");
+                                $"Nodes <<   {n.ID,-12} {n.Coordinate.Latitude,-12} {n.Coordinate.Longitude,-12} {n.Timestamp,-20}  {n.User}");
 
                         Nodes.Add(n);
 
                         break;
+
                     case "way":
 
                         var w = new Way()
@@ -159,10 +164,12 @@ namespace OSMRoads
                                     case "nd":
                                         w.NodeRefs.Add(ulong.Parse(w_j.Attributes.GetNamedItem("ref").Value));
                                         break;
+
                                     case "tag":
                                         w.Tag.Add(w_j.Attributes.GetNamedItem("k").Value,
                                             w_j.Attributes.GetNamedItem("v").Value);
                                         break;
+
                                     default:
                                         if (verbose)
                                         {
@@ -180,6 +187,7 @@ namespace OSMRoads
                         Ways.Add(w);
 
                         break;
+
                     case "relation":
 
                         var r = new Relation()
@@ -210,10 +218,12 @@ namespace OSMRoads
                                             Role = r_j.Attributes.GetNamedItem("role").Value,
                                         });
                                         break;
+
                                     case "tag":
                                         r.Tag.Add(r_j.Attributes.GetNamedItem("k").Value,
                                             r_j.Attributes.GetNamedItem("v").Value);
                                         break;
+
                                     default:
                                         if (verbose)
                                         {
@@ -231,6 +241,7 @@ namespace OSMRoads
                         Relations.Add(r);
 
                         break;
+
                     default:
                         Console.WriteLine(osmItem.Name.ToLower());
                         Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(osmItem));
@@ -240,7 +251,7 @@ namespace OSMRoads
             }
         }
 
-        public void LoadFile(string osmPath, bool verbose = false )
+        public void LoadFile(string osmPath, bool verbose = false)
         {
             XmlDocument osm = new XmlDocument();
             osm.Load(osmPath);
@@ -281,12 +292,12 @@ namespace OSMRoads
                 foreach (var n in Nodes)
                 {
                     fileStream.WriteLine(
-                        $"{n.ID},{n.Lat},{n.Lon},{n.Visible},{n.Version},{n.Changeset},{n.Timestamp},{n.User},{n.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(n.Tag).Replace(",", "#comma#")}"
+                        $"{n.ID},{n.Coordinate.Latitude},{n.Coordinate.Longitude},{n.Visible},{n.Version},{n.Changeset},{n.Timestamp},{n.User},{n.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(n.Tag).Replace(",", "#comma#")}"
                         );
 
                     i++;
-                    if(verbose)
-                        Console.WriteLine($" {i}/{totalcount} writing node {n.ID} {n.Lat} {n.Lon} {n.Timestamp} {n.User}");
+                    if (verbose)
+                        Console.WriteLine($" {i}/{totalcount} writing node {n.ID} {n.Coordinate.Latitude} {n.Coordinate.Longitude} {n.Timestamp} {n.User}");
                 }
             }
             using (var fileStream = File.CreateText($"{outFolder}\\CSV\\Relations_{filenamePostfix}.csv"))
@@ -298,7 +309,7 @@ namespace OSMRoads
                         $"{r.ID},{r.Visible},{r.Version},{r.Changeset},{r.Timestamp},{r.User},{r.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(r.Members).Replace(",", "#comma#")},{Newtonsoft.Json.JsonConvert.SerializeObject(r.Tag).Replace(",", "#comma#")}");
 
                     i++;
-                    if(verbose)
+                    if (verbose)
                         Console.WriteLine($" {i}/{totalcount} writing relation {r.ID} {r.Timestamp} {r.User}");
                 }
             }
@@ -311,7 +322,7 @@ namespace OSMRoads
                         $"{w.ID},{w.Visible},{w.Version},{w.Changeset},{w.Timestamp},{w.User},{w.Uid},{Newtonsoft.Json.JsonConvert.SerializeObject(w.NodeRefs).Replace(",", "#comma#")},{Newtonsoft.Json.JsonConvert.SerializeObject(w.Tag).Replace(",", "#comma#")}");
 
                     i++;
-                    if(verbose)
+                    if (verbose)
                         Console.WriteLine($" {i}/{totalcount} writing way {w.ID} {w.Timestamp} {w.User}");
                 }
             }
@@ -326,24 +337,25 @@ namespace OSMRoads
                 case "json":
                     WriteJsons(outFolder, filenamePostfix: filenamePostfix);
                     break;
+
                 case "csv":
                     WriteCsvs(outFolder, verbose: verbose, filenamePostfix: filenamePostfix);
                     break;
+
                 case "all":
                     WriteJsons(outFolder, filenamePostfix: filenamePostfix);
-                    WriteCsvs(outFolder, verbose:verbose, filenamePostfix:filenamePostfix);
+                    WriteCsvs(outFolder, verbose: verbose, filenamePostfix: filenamePostfix);
                     break;
+
                 default:
                     Console.WriteLine("no output extensions specified");
                     Console.ReadLine();
                     break;
             }
 
-            if (pauseWhenDone)
-            {
-                Console.WriteLine($" done writing to {extension}");
-                Console.ReadLine();
-            }
+            if (!pauseWhenDone) return;
+            Console.WriteLine($" done writing to {extension}");
+            Console.ReadLine();
         }
     }
 }
