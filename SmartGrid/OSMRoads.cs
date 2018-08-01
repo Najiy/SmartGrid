@@ -9,10 +9,10 @@ namespace OSMRoads
 {
     public struct Bounds
     {
-        public double MinLat { get; set; }
-        public double MinLon { get; set; }
-        public double MaxLat { get; set; }
-        public double MaxLon { get; set; }
+        public decimal MinLat { get; set; }
+        public decimal MinLon { get; set; }
+        public decimal MaxLat { get; set; }
+        public decimal MaxLon { get; set; }
     }
 
     public struct Node
@@ -79,10 +79,10 @@ namespace OSMRoads
                 {
                     case "bounds":
 
-                        Bounds.MaxLat = double.Parse(osmItem.Attributes.GetNamedItem("maxlat").Value);
-                        Bounds.MaxLon = double.Parse(osmItem.Attributes.GetNamedItem("maxlon").Value);
-                        Bounds.MinLat = double.Parse(osmItem.Attributes.GetNamedItem("minlat").Value);
-                        Bounds.MinLon = double.Parse(osmItem.Attributes.GetNamedItem("minlon").Value);
+                        Bounds.MaxLat = decimal.Parse(osmItem.Attributes.GetNamedItem("maxlat").Value);
+                        Bounds.MaxLon = decimal.Parse(osmItem.Attributes.GetNamedItem("maxlon").Value);
+                        Bounds.MinLat = decimal.Parse(osmItem.Attributes.GetNamedItem("minlat").Value);
+                        Bounds.MinLon = decimal.Parse(osmItem.Attributes.GetNamedItem("minlon").Value);
 
                         if (verbose)
                             Console.WriteLine(
@@ -105,8 +105,8 @@ namespace OSMRoads
                         };
                         GeoCoordinate coordinate = new GeoCoordinate()
                         {
-                            Latitude = double.Parse(osmItem.Attributes.GetNamedItem("lat").Value),
-                            Longitude = double.Parse(osmItem.Attributes.GetNamedItem("lon").Value)
+                            Latitude = decimal.Parse(osmItem.Attributes.GetNamedItem("lat").Value),
+                            Longitude = decimal.Parse(osmItem.Attributes.GetNamedItem("lon").Value)
                         };
                         n.Coordinate = coordinate;
                         if (osmItem.HasChildNodes)

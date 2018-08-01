@@ -8,19 +8,20 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
 
+
 namespace OSOpenRoads
 {
     public struct Bounds
     {
-        public double MinLat { get; set; }
-        public double MinLon { get; set; }
-        public double MaxLat { get; set; }
-        public double MaxLon { get; set; }
+        public decimal MinLat { get; set; }
+        public decimal MinLon { get; set; }
+        public decimal MaxLat { get; set; }
+        public decimal MaxLon { get; set; }
     }
 
     public struct RoadNode
     {
-        public string Id { get; set; }
+        
         public bool BeginLifespanVersion { get; set; }
         public bool InNetwork { get; set; }
         public GeoCoordinate Coordinate { get; set; }
@@ -57,7 +58,7 @@ namespace OSOpenRoads
     {
         public Bounds Bounds;
         public List<RoadLink> RoadLinks = new List<RoadLink>();
-        public List<RoadNode> RoadNodes = new List<RoadNode>();
+        public Dictionary<string, RoadNode> RoadNodes = new Dictionary<string, RoadNode>();
 
         public void LoadFile(XmlDocument or, bool verbose = false)
         {
@@ -77,14 +78,14 @@ namespace OSOpenRoads
                                 {
                                     case "gml:lowerCorner":
                                         var lowerCorner = currentNode.ChildNodes.Item(0).InnerText.Split(" ");
-                                        Bounds.MinLat = double.Parse(lowerCorner[0]);
-                                        Bounds.MinLon = double.Parse(lowerCorner[1]);
+                                        Bounds.MinLat = decimal.Parse(lowerCorner[0]);
+                                        Bounds.MinLon = decimal.Parse(lowerCorner[1]);
                                         break;
 
                                     case "gml:upperCorner":
                                         var upperCorner = currentNode.ChildNodes.Item(1).InnerText.Split(" ");
-                                        Bounds.MaxLat = double.Parse(upperCorner[0]);
-                                        Bounds.MaxLon = double.Parse(upperCorner[1]);
+                                        Bounds.MaxLat = decimal.Parse(upperCorner[0]);
+                                        Bounds.MaxLon = decimal.Parse(upperCorner[1]);
                                         break;
                                 }
 
@@ -96,7 +97,7 @@ namespace OSOpenRoads
 
                         case "road:RoadNode":
                             var roadNode = new RoadNode();
-                            roadNode.Id = currentNode.Attributes.GetNamedItem("gml:id").Value;
+                            var Id = currentNode.Attributes.GetNamedItem("gml:id").Value;
                             for (int z = 0; z < currentNode.ChildNodes.Count; z++)
                             {
                                 switch (currentNode.ChildNodes.Item(z).Name)
@@ -113,13 +114,21 @@ namespace OSOpenRoads
 
                                     case "net:geometry":
                                         var location = currentNode.ChildNodes.Item(z).InnerText.Split(" ");
+                                        //todo: here
 
+
+                                        var convertedCoordinate =
+                                            LatLonConversions.ConvertOSToLatLon(Convert.ToDouble(location[0]),
+                                                Convert.ToDouble(location[1]));
                                         GeoCoordinate coordinate = new GeoCoordinate()
                                         {
-                                            Latitude = double.Parse(location[0]),
-                                            Longitude = double.Parse(location[1])
+                                            Latitude = (decimal) convertedCoordinate.Latitude,
+                                            Longitude =(decimal) convertedCoordinate.Longitude
                                         };
                                         roadNode.Coordinate = coordinate;
+
+
+
                                         break;
 
                                     case "tn-ro:formOfRoadNode":
@@ -129,10 +138,10 @@ namespace OSOpenRoads
                                         break;
                                 }
                             }
-                            RoadNodes.Add(roadNode);
+                            TryAddNode( Id, roadNode);
 
                             if (verbose)
-                                Console.WriteLine($"Node << {roadNode.Id} {roadNode.Coordinate.Latitude}" +
+                                Console.WriteLine($"Node << {Id} {roadNode.Coordinate.Latitude}" +
                                                   $" {roadNode.Coordinate.Longitude} {roadNode.RoadType}");
 
                             break;
@@ -148,12 +157,15 @@ namespace OSOpenRoads
                                     Convert.ToBoolean(inn.FirstOrDefault()?.Attributes.GetNamedItem("xsi:nil").Value);
                                 var clg = currentNode.ChildNodes.Where(x => x.Name == "net:centrelineGeometry");
                                 var vals = clg.FirstOrDefault()?.InnerText.Split(" ");
+                                roadLink.CentrelineGeometry = new List<GeoCoordinate>();
                                 for (int q = 0; q < vals.Length; q += 2)
                                 {
+
+                                    var convertedCoordinate = LatLonConversions.ConvertOSToLatLon(Double.Parse(vals[q]), double.Parse(vals[q + 1]));
                                     GeoCoordinate coordinate = new GeoCoordinate()
                                     {
-                                        Latitude = Double.Parse(vals[i]),
-                                        Longitude = Double.Parse(vals[i + 1])
+                                        Latitude = (decimal) convertedCoordinate.Latitude,
+                                        Longitude = (decimal) convertedCoordinate.Longitude
                                     };
 
                                     roadLink.CentrelineGeometry.Add(coordinate);
@@ -202,6 +214,17 @@ namespace OSOpenRoads
             }
         }
 
+        public void TryAddNode(string id, RoadNode node)
+        {
+            try
+            {
+                RoadNodes.Add(id, node);
+            }
+            catch
+            {
+                
+            }
+        }
         //used for intermediate nodes that don't appear in .gml files
         public void CreateNode(List<GeoCoordinate> coordinates)
         {
@@ -209,11 +232,12 @@ namespace OSOpenRoads
             {
                 var coordinate = coordinates[i];
                 var hash = GetHash(coordinate.Latitude + coordinate.Longitude.ToString());
-                var id = GetHashString(hash.ToString());
+                //var id = GetHashString(hash.ToString());
+                var id = coordinate.Latitude.ToString()+ coordinate.Longitude.ToString();
                 var node = new RoadNode()
                 {
                     Coordinate = coordinate,
-                    Id = id,
+                    
                     //Default settings
                     BeginLifespanVersion = false,
                     FormOfRoadNode = "",
@@ -221,13 +245,13 @@ namespace OSOpenRoads
                     RoadType = ""
                 };
 
-                RoadNodes.Add(node);
+                TryAddNode(id, node);
             }
         }
 
         public static byte[] GetHash(string inputString)
         {
-            HashAlgorithm algorithm = MD5.Create();  //or use SHA256.Create();
+            HashAlgorithm algorithm = SHA256.Create();  //or use SHA256.Create();
             return algorithm.ComputeHash(Encoding.UTF8.GetBytes(inputString));
         }
 
@@ -293,11 +317,11 @@ namespace OSOpenRoads
                 var i = linkcount;
                 foreach (var node in RoadNodes)
                 {
-                    fileStream.WriteLine($"{node.Id},{node.Coordinate.Latitude},{node.Coordinate.Longitude},{node.BeginLifespanVersion},{node.InNetwork},{node.FormOfRoadNode},{node.RoadType}");
+                    fileStream.WriteLine($"{node.Key},{node.Value.Coordinate.Latitude},{node.Value.Coordinate.Longitude},{node.Value.BeginLifespanVersion},{node.Value.InNetwork},{node.Value.FormOfRoadNode},{node.Value.RoadType}");
 
                     i++;
                     if (verbose)
-                        Console.WriteLine($" {i}/{totalcount} writing node {node.Id} {node.Coordinate.Latitude} {node.Coordinate.Longitude}");
+                        Console.WriteLine($" {i}/{totalcount} writing node {node.Key} {node.Value.Coordinate.Latitude} {node.Value.Coordinate.Longitude}");
                 }
             }
         }

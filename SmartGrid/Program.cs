@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Xml;
 
 namespace SmartGrid
@@ -13,28 +15,32 @@ namespace SmartGrid
 
         private static void Main(string[] args)
         {
-            //string fileFormat = "";
 
-            //while (!(fileFormat == "OSM" || fileFormat == "OR"))
-            //{
-            //    Console.WriteLine("Loading OSM or OpenRoad? (OSM||OR)");
-            //    fileFormat = Console.ReadLine().ToUpper();
-            //}
-            //if (fileFormat == "OSM") OsmLoad();
-            //else OpenRoadLoad();
+            //            string fileFormat = "";
 
-            MapProcessor.ProcessFolder(verboseLoad: true, verboseWrite: true);
+            //            while (!(fileFormat == "OSM" || fileFormat == "OR"))
+            //            {
+            //                Console.WriteLine("Loading OSM or OpenRoad? (OSM||OR)");
+            //                fileFormat = Console.ReadLine().ToUpper();
+            //            }
+            //            if (fileFormat == "OSM") OsmLoad();
+            //            else OpenRoadLoad();
+            SmartGrid smartGrid = SmartGrid.FomOSOpenRoads(OpenRoadLoad(@"D:\BiRT\data\OSOpenRoads_NA.gml"));
+            var a = smartGrid.RoadNodes.First().Key;
+            var b = smartGrid.RoadNodes.ElementAt(4).Key;
+            var c = smartGrid.RoadNodes.ElementAt(6).Key;
+            Console.WriteLine(smartGrid.GetAngle(a,b,c));
+            MapProcessor.ProcessFolder(verboseLoad: false, verboseWrite: false);
 
             Console.WriteLine(" end");
             Console.ReadLine();
         }
 
-        private static void OpenRoadLoad()
+        private static OSOpenRoads.OSOpenRoads OpenRoadLoad(string filepath)
         {
             OSOpenRoads.OSOpenRoads orsg = new OSOpenRoads.OSOpenRoads();
             XmlDocument gml = new XmlDocument();
 
-            string filepath = "";
             while (!File.Exists(filepath))
             {
                 Console.WriteLine("Enter the .gml filepath");
@@ -42,8 +48,10 @@ namespace SmartGrid
             }
             gml.Load(filepath);
             orsg.LoadFile(gml, true);
-            var extension = QueryExtension();
-            orsg.WriteToFile(extension: extension, verbose: true);
+            //var extension = QueryExtension();
+            //orsg.WriteToFile(extension: extension, verbose: true);
+
+            return orsg;
         }
 
         private static void OsmLoad()
