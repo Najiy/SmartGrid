@@ -6,7 +6,7 @@ using System.Drawing;
 //using System.Device.Location;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Forms.DataVisualization.Charting;
+//using System.Windows.Forms.DataVisualization.Charting;
 using System.IO;
 using Newtonsoft.Json;
 
@@ -70,12 +70,14 @@ namespace SmartGrid
                 };
                 node.Coordinate = coordinate;
                 PropertyInfo[] attributes = currentNode.GetType().GetProperties();
+                node.Descriptors = new Dictionary<string, string>();
                 foreach (var attribute in attributes)
                 {
+                    var b = attribute.GetValue(currentNode);
                     if (attribute.Name.ToLower() != "lat" && attribute.Name.ToLower() != "lon" &&
                         attribute.Name.ToLower() != "id")
                     {
-                        node.Descriptors.Add(attribute.Name, attribute.GetValue(currentNode, null).ToString());
+                        node.Descriptors.Add(attribute.Name, b.ToString());
                     }
                 }
                 r.RoadNodes.Add(currentNode.ID.ToString(), node);
@@ -84,25 +86,25 @@ namespace SmartGrid
             //no understanding of how relations are used in the OSM files. I think this is right but not sure.
             if (!KeepRelations) return r;
 
-            foreach (var currentLink in self.Relations)
+            foreach (var currentLink in self.Ways)
             {
                 RoadLink link = new RoadLink();
                 List<RoadVector> vectors = new List<RoadVector>();
-                List<string> nodes = (from member in currentLink.Members
-                                      where member.Type.ToLower() == "node"
-                                      select member.Ref.ToString()).ToList();
+                List<ulong> nodes = currentLink.NodeRefs;
+                
                 for (int index = 0; index < nodes.Count - 1; index++)
                 {
                     var currNode = nodes[index];
                     var nextNode = nodes[index + 1];
                     vectors.Add(new RoadVector()
                     {
-                        NodeFrom = currNode,
-                        NodeTo = nextNode
+                        NodeFrom = currNode.ToString(),
+                        NodeTo = nextNode.ToString()
                     });
                 }
                 link.Vectors = vectors;
                 PropertyInfo[] attributes = currentLink.GetType().GetProperties();
+                link.Descriptors = new Dictionary<string, string>();
                 foreach (var attribute in attributes)
                 {
                     if (attribute.Name.ToLower() != "members")
@@ -119,7 +121,7 @@ namespace SmartGrid
             return r;
         }
 
-        public static SmartGrid FomOSOpenRoads(OSOpenRoads.OSOpenRoads self)
+        public static SmartGrid FromOSOpenRoads(OSOpenRoads.OSOpenRoads self)
         {
             SmartGrid r = new SmartGrid();
             foreach (var currentNode in self.RoadNodes)
@@ -142,24 +144,18 @@ namespace SmartGrid
                         node.Descriptors.Add(i.Name, i.GetValue(currentNode, null).ToString());
                     }
                 }
-                var key = "OSOR:" + currentNode.Key;
+                var key =  currentNode.Key;
                 try
                 {
                     r.RoadNodes.Add(key, node);
                 }
-                catch
-                {
-                    var a = r.RoadNodes.Where(x => x.Key == key);
-
-                    Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(a, Formatting.Indented));
-                    Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(node, Formatting.Indented));
-                }
+                catch { }
             }
             foreach (var currentLink in self.RoadLinks)
             {
                 RoadLink link = new RoadLink();
                 List<RoadVector> vectors = new List<RoadVector>();
-                for (var index = 0; index < currentLink.CentrelineGeometry.Count - 1; index++)
+                for (var index = 1; index < currentLink.CentrelineGeometry.Count - 2; index++)
                 {
                     GeoCoordinate from = currentLink.CentrelineGeometry[index];
                     GeoCoordinate to = currentLink.CentrelineGeometry[index + 1];
@@ -167,15 +163,17 @@ namespace SmartGrid
                         x.Value.Coordinate.Latitude.Equals(from.Latitude) && x.Value.Coordinate.Longitude.Equals(from.Longitude));
                     var toNode = self.RoadNodes.Where(x =>
                         x.Value.Coordinate.Latitude.Equals(to.Latitude) && x.Value.Coordinate.Longitude.Equals(to.Longitude));
-                    vectors.Add(new RoadVector()
+                    var a = new RoadVector()
                     {
                         NodeFrom = fromNode.FirstOrDefault().Key,
                         NodeTo = toNode.FirstOrDefault().Key
 
-                    });
+                    };
+                    vectors.Add(a);
                 }
                 link.Vectors = vectors;
                 PropertyInfo[] attributes = currentLink.GetType().GetProperties();
+                
                 foreach (var i in attributes)
                 {
                     link.Descriptors = new Dictionary<string, string>();
@@ -192,7 +190,7 @@ namespace SmartGrid
                         }
                     }
                 }
-                var key = "OSOR:" + currentLink.Id;
+                var key = currentLink.Id;
                 r.RoadLinks.Add(key, link);
             }
 
@@ -248,60 +246,62 @@ namespace SmartGrid
         public void GeneratePNG(decimal minlat, decimal minlon, decimal maxlat, decimal maxlon)
         {
             // return roadlinks in range specified by parameters
-            var linksInRange = RoadLinks.Where(x => x.Value.Vectors.TrueForAll(y => (minlat < RoadNodes[y.NodeFrom].Coordinate.Latitude
-                                                 && maxlat > RoadNodes[y.NodeFrom].Coordinate.Latitude &&
-                                                 minlat < RoadNodes[y.NodeFrom].Coordinate.Longitude &&
-                                                 maxlat > RoadNodes[y.NodeFrom].Coordinate.Longitude) &&
-                                                 (minlat < RoadNodes[y.NodeTo].Coordinate.Latitude
-                                                    && maxlat > RoadNodes[y.NodeTo].Coordinate.Latitude &&
-                                                minlat < RoadNodes[y.NodeTo].Coordinate.Longitude &&
-                                                maxlat > RoadNodes[y.NodeTo].Coordinate.Longitude)));
-            // @Shyam generate PNG using roadvectors defined by the bounds - do this then you're a Legend..
-            Grid g = new Grid();
-
-            Axis lat = new Axis
-            {
-                Minimum = (double)minlat,
-                Maximum = (double)maxlat,
-
-
-            };
-            Axis lon = new Axis()
-            {
-                Minimum = (double) minlon,
-                Maximum = (double) maxlon
-            };
-            lat.Interval = (double)(maxlat - minlat) / 100;
-            lon.Interval = (double)(maxlon - minlon) / 100;
-            ChartArea a = new ChartArea()
-            {
-                AxisX = lat,
-                AxisY = lon
-            };
-            var ch = new Chart();
-            ch.ChartAreas.Add(a);
-
+            var linksInRange = RoadLinks;
+                //RoadLinks.Where(x => x.Value.Vectors.TrueForAll(y => (minlat < RoadNodes[y.NodeFrom].Coordinate.Latitude
+                //                                && maxlat > RoadNodes[y.NodeFrom].Coordinate.Latitude &&
+                //                                minlat < RoadNodes[y.NodeFrom].Coordinate.Longitude &&
+                //                                maxlat > RoadNodes[y.NodeFrom].Coordinate.Longitude) &&
+                //                                (minlat < RoadNodes[y.NodeTo].Coordinate.Latitude
+                //                                   && maxlat > RoadNodes[y.NodeTo].Coordinate.Latitude &&
+                //                               minlat < RoadNodes[y.NodeTo].Coordinate.Longitude &&
+                //                               maxlat > RoadNodes[y.NodeTo].Coordinate.Longitude)));
+ 
             string python = @"D:\Program Files (x86)\python\python.exe";
             string pythonApp = @"C:\Users\shyam\PycharmProjects\codetest\plot_graph.py";
-            ProcessStartInfo myProcessStartInfo = new ProcessStartInfo(python);
+            Process p = new Process();
+            List<RoadVector[]> vectorList = linksInRange.Select(link => link.Value.Vectors.ToArray()).ToList();
+            var z = linksInRange.SelectMany(x => x.Value.Vectors).ToList();
 
-            myProcessStartInfo.UseShellExecute = false;
-            myProcessStartInfo.RedirectStandardOutput = true;
-            myProcessStartInfo.Arguments = pythonApp;
-            Process trustTheProcess = new Process();
-            trustTheProcess.StartInfo = myProcessStartInfo;
-            trustTheProcess.Start();
+            List<KeyValuePair<decimal,decimal>> decimals = new List<KeyValuePair<decimal, decimal>>();
+            foreach (var link in z)
+            {
+                var nodeFrom = new KeyValuePair<decimal, decimal>
+                    (RoadNodes[link.NodeFrom].Coordinate.Latitude, RoadNodes[link.NodeFrom].Coordinate.Longitude);
+                var nodeTo = new KeyValuePair<decimal, decimal>
+                    (RoadNodes[link.NodeTo].Coordinate.Latitude, RoadNodes[link.NodeTo].Coordinate.Longitude);
+                decimals.Add(nodeFrom);
+                decimals.Add(nodeTo);
+            }
+            var decimalArray =  decimals.ToArray();
+            var originalCode = File.ReadAllLines(pythonApp);
+            var code = File.ReadAllLines(pythonApp).ToList();
 
-            //            {
-            //               ChartAreas.Add(a)
-            //                //  var s = new Series();
-            //                //  foreach (var pnt in linksInRange) s.Points.Add(RoadNodes[pnt.Key].Coordinate.);
-            //                //   ch.Series.Add(s);
-            //
-            ////                ch.SaveImage(@"C:\a", ChartImageFormat.Png);
-            //
-            //            };
+            for (var index = 0; index < decimalArray.Length-1; index++)
+            {
+                var integer1 = decimalArray[index];
+                //var integer2 = [index];
+                code.Insert(6 + index, "listA.append([" + integer1.Key + "," + integer1.Value + "])");
+            }
+            var codeLines = code.ToArray();
+            File.WriteAllLines(pythonApp, codeLines);
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardInput = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.StartInfo.CreateNoWindow = true;
 
+            
+            p.StartInfo.FileName = "python";
+            p.StartInfo.Arguments = pythonApp;
+
+            p.Start();
+            using (StreamReader reader = p.StandardOutput)
+            {
+                string result = reader.ReadToEnd();
+                Console.Write(result);
+            }
+
+           
+            File.WriteAllLines(pythonApp,originalCode);
         }
 
     }

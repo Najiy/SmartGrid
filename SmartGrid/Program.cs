@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms.DataVisualization.Charting;
 using System.Xml;
 
 namespace SmartGrid
@@ -25,11 +26,20 @@ namespace SmartGrid
             //            }
             //            if (fileFormat == "OSM") OsmLoad();
             //            else OpenRoadLoad();
-            SmartGrid smartGrid = SmartGrid.FomOSOpenRoads(OpenRoadLoad(@"D:\BiRT\data\OSOpenRoads_NA.gml"));
-            var a = smartGrid.RoadNodes.First().Key;
-            var b = smartGrid.RoadNodes.ElementAt(4).Key;
-            var c = smartGrid.RoadNodes.ElementAt(6).Key;
-            Console.WriteLine(smartGrid.GetAngle(a,b,c));
+
+            SmartGrid ASmartGrid = SmartGrid.FromOSOpenRoads(OpenRoadLoad(@"D:\BiRT\data\OSOpenRoads_NA.gml"));
+            
+            SmartGrid BSmartGrid =  SmartGrid.FromOSM(OsmLoad());
+            ASmartGrid.RoadNodes.ToList().ForEach(x => BSmartGrid.RoadNodes.Add(x.Key, x.Value));
+            ASmartGrid.RoadLinks.ToList().ForEach(x=>BSmartGrid.RoadLinks.Add(x.Key,x.Value));
+            //dictionaryFrom.ToList().ForEach(x => dictionaryTo.Add(x.Key, x.Value));
+           
+            BSmartGrid.GeneratePNG(57,-8,58,-7);
+//            smartGrid.GeneratePNG(57, -8, 58, -7);
+            var a = BSmartGrid.RoadNodes.First().Key;
+            var b = BSmartGrid.RoadNodes.ElementAt(4).Key;
+            var c = BSmartGrid.RoadNodes.ElementAt(6).Key;
+            Console.WriteLine(BSmartGrid.GetAngle(a,b,c));
             MapProcessor.ProcessFolder(verboseLoad: false, verboseWrite: false);
 
             Console.WriteLine(" end");
@@ -54,7 +64,7 @@ namespace SmartGrid
             return orsg;
         }
 
-        private static void OsmLoad()
+        private static OSMRoads.OSMRoads OsmLoad()
         {
             OSMRoads.OSMRoads sm = new OSMRoads.OSMRoads();
             XmlDocument osm = new XmlDocument();
@@ -85,7 +95,9 @@ namespace SmartGrid
             sm.WriteToFile(extension: extension);
 
             Console.WriteLine("Done");
-            Console.ReadLine();
+    
+        
+            return sm;
         }
 
         private static string QueryExtension()

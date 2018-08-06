@@ -97,7 +97,7 @@ namespace OSOpenRoads
 
                         case "road:RoadNode":
                             var roadNode = new RoadNode();
-                            var Id = currentNode.Attributes.GetNamedItem("gml:id").Value;
+                            var Id ="OSOR:" + currentNode.Attributes.GetNamedItem("gml:id").Value;
                             for (int z = 0; z < currentNode.ChildNodes.Count; z++)
                             {
                                 switch (currentNode.ChildNodes.Item(z).Name)
@@ -138,7 +138,7 @@ namespace OSOpenRoads
                                         break;
                                 }
                             }
-                            TryAddNode( Id, roadNode);
+                            TryAddNode(Id, roadNode);
 
                             if (verbose)
                                 Console.WriteLine($"Node << {Id} {roadNode.Coordinate.Latitude}" +
@@ -148,7 +148,7 @@ namespace OSOpenRoads
 
                         case "road:RoadLink":
                             {
-                                var roadLink = new RoadLink { Id = currentNode.Attributes.GetNamedItem("gml:id").Value };
+                                var roadLink = new RoadLink { Id = "OSOR:" + currentNode.Attributes.GetNamedItem("gml:id").Value };
                                 var blv = currentNode.ChildNodes.Where(x => x.Name == "net:beginLifespanVersion");
                                 roadLink.BeginLifespanVersion =
                                     Convert.ToBoolean(blv.FirstOrDefault()?.Attributes.GetNamedItem("xsi:nil").Value);
@@ -176,7 +176,7 @@ namespace OSOpenRoads
                                 var sn = currentNode.ChildNodes.Where(x => x.Name == "net:startNode");
                                 roadLink.StartNode = sn.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
                                 var en = currentNode.ChildNodes.Where(x => x.Name == "net:endNode");
-                                roadLink.StartNode = en.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
+                                roadLink.EndNode = en.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value;
                                 var rc = currentNode.ChildNodes.Where(x => x.Name == "road:roadClassification");
                                 roadLink.RoadClassification = rc.FirstOrDefault()?.InnerText;
                                 var rf = currentNode.ChildNodes.Where(x => x.Name == "road:roadFunction");
@@ -233,7 +233,7 @@ namespace OSOpenRoads
                 var coordinate = coordinates[i];
                 var hash = GetHash(coordinate.Latitude + coordinate.Longitude.ToString());
                 //var id = GetHashString(hash.ToString());
-                var id = coordinate.Latitude.ToString()+ coordinate.Longitude.ToString();
+                var id ="OSOR:" + coordinate.Latitude+ coordinate.Longitude;
                 var node = new RoadNode()
                 {
                     Coordinate = coordinate,
