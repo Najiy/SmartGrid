@@ -21,7 +21,7 @@ namespace OSOpenRoads
 
     public struct RoadNode
     {
-        
+
         public bool BeginLifespanVersion { get; set; }
         public bool InNetwork { get; set; }
         public GeoCoordinate Coordinate { get; set; }
@@ -91,13 +91,13 @@ namespace OSOpenRoads
 
                                 if (verbose)
                                     Console.WriteLine($"Bounds << MaxLat {Bounds.MaxLat}  MaxLon {Bounds.MaxLon} " +
-                                                      $" MinLat {Bounds.MinLat}  MinLon {Bounds.MinLon}");
+                                                   $" MinLat {Bounds.MinLat}  MinLon {Bounds.MinLon}");
                             }
                             break;
 
                         case "road:RoadNode":
                             var roadNode = new RoadNode();
-                            var Id ="OSOR:" + currentNode.Attributes.GetNamedItem("gml:id").Value;
+                            var Id = "OSOR:" + currentNode.Attributes.GetNamedItem("gml:id").Value;
                             for (int z = 0; z < currentNode.ChildNodes.Count; z++)
                             {
                                 switch (currentNode.ChildNodes.Item(z).Name)
@@ -122,8 +122,8 @@ namespace OSOpenRoads
                                                 Convert.ToDouble(location[1]));
                                         GeoCoordinate coordinate = new GeoCoordinate()
                                         {
-                                            Latitude = (decimal) convertedCoordinate.Latitude,
-                                            Longitude =(decimal) convertedCoordinate.Longitude
+                                            Latitude = (decimal)convertedCoordinate.Latitude,
+                                            Longitude = (decimal)convertedCoordinate.Longitude
                                         };
                                         roadNode.Coordinate = coordinate;
 
@@ -142,7 +142,7 @@ namespace OSOpenRoads
 
                             if (verbose)
                                 Console.WriteLine($"Node << {Id} {roadNode.Coordinate.Latitude}" +
-                                                  $" {roadNode.Coordinate.Longitude} {roadNode.RoadType}");
+$" {roadNode.Coordinate.Longitude} {roadNode.RoadType}");
 
                             break;
 
@@ -164,8 +164,8 @@ namespace OSOpenRoads
                                     var convertedCoordinate = LatLonConversions.ConvertOSToLatLon(Double.Parse(vals[q]), double.Parse(vals[q + 1]));
                                     GeoCoordinate coordinate = new GeoCoordinate()
                                     {
-                                        Latitude = (decimal) convertedCoordinate.Latitude,
-                                        Longitude = (decimal) convertedCoordinate.Longitude
+                                        Latitude = (decimal)convertedCoordinate.Latitude,
+                                        Longitude = (decimal)convertedCoordinate.Longitude
                                     };
 
                                     roadLink.CentrelineGeometry.Add(coordinate);
@@ -222,7 +222,7 @@ namespace OSOpenRoads
             }
             catch
             {
-                
+
             }
         }
         //used for intermediate nodes that don't appear in .gml files
@@ -233,11 +233,11 @@ namespace OSOpenRoads
                 var coordinate = coordinates[i];
                 var hash = GetHash(coordinate.Latitude + coordinate.Longitude.ToString());
                 //var id = GetHashString(hash.ToString());
-                var id ="OSOR:" + coordinate.Latitude+ coordinate.Longitude;
+                var id = "OSOR:" + coordinate.Latitude + coordinate.Longitude;
                 var node = new RoadNode()
                 {
                     Coordinate = coordinate,
-                    
+
                     //Default settings
                     BeginLifespanVersion = false,
                     FormOfRoadNode = "",

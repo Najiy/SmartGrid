@@ -163,13 +163,13 @@ namespace SmartGrid
                         x.Value.Coordinate.Latitude.Equals(from.Latitude) && x.Value.Coordinate.Longitude.Equals(from.Longitude));
                     var toNode = self.RoadNodes.Where(x =>
                         x.Value.Coordinate.Latitude.Equals(to.Latitude) && x.Value.Coordinate.Longitude.Equals(to.Longitude));
-                    var a = new RoadVector()
+                    var roadVector = new RoadVector()
                     {
                         NodeFrom = fromNode.FirstOrDefault().Key,
                         NodeTo = toNode.FirstOrDefault().Key
 
                     };
-                    vectors.Add(a);
+                    vectors.Add(roadVector);
                 }
                 link.Vectors = vectors;
                 PropertyInfo[] attributes = currentLink.GetType().GetProperties();
@@ -255,33 +255,44 @@ namespace SmartGrid
                 //                                   && maxlat > RoadNodes[y.NodeTo].Coordinate.Latitude &&
                 //                               minlat < RoadNodes[y.NodeTo].Coordinate.Longitude &&
                 //                               maxlat > RoadNodes[y.NodeTo].Coordinate.Longitude)));
- 
+            //Change to python filepath
             string python = @"D:\Program Files (x86)\python\python.exe";
-            string pythonApp = @"C:\Users\shyam\PycharmProjects\codetest\plot_graph.py";
+            string pythonApp = @"D:\BiRT\SmartGrid\SmartGrid\plot_graph.py";
             Process p = new Process();
             List<RoadVector[]> vectorList = linksInRange.Select(link => link.Value.Vectors.ToArray()).ToList();
-            var z = linksInRange.SelectMany(x => x.Value.Vectors).ToList();
-
-            List<KeyValuePair<decimal,decimal>> decimals = new List<KeyValuePair<decimal, decimal>>();
-            foreach (var link in z)
+            List<string[]> coordinateList = new List<string[]>();
+            foreach (var vectorGroup in vectorList)
             {
-                var nodeFrom = new KeyValuePair<decimal, decimal>
-                    (RoadNodes[link.NodeFrom].Coordinate.Latitude, RoadNodes[link.NodeFrom].Coordinate.Longitude);
-                var nodeTo = new KeyValuePair<decimal, decimal>
-                    (RoadNodes[link.NodeTo].Coordinate.Latitude, RoadNodes[link.NodeTo].Coordinate.Longitude);
-                decimals.Add(nodeFrom);
-                decimals.Add(nodeTo);
+                string coords = "";
+                foreach (var node in vectorGroup)
+                {
+                    coords += RoadNodes[node.NodeFrom].Coordinate.Latitude +" "+
+                              RoadNodes[node.NodeFrom].Coordinate.Longitude + " ";
+                    coords += RoadNodes[node.NodeTo].Coordinate.Latitude + " " +
+                              RoadNodes[node.NodeTo].Coordinate.Longitude + " ";
+                }
+                string[] array = coords.Split(" ");
+                array = array.Where(x => !string.IsNullOrEmpty(x)).ToArray();
+                coordinateList.Add(array);
             }
-            var decimalArray =  decimals.ToArray();
+
             var originalCode = File.ReadAllLines(pythonApp);
             var code = File.ReadAllLines(pythonApp).ToList();
 
-            for (var index = 0; index < decimalArray.Length-1; index++)
+            foreach (var coordinateGroup in coordinateList)
             {
-                var integer1 = decimalArray[index];
-                //var integer2 = [index];
-                code.Insert(6 + index, "listA.append([" + integer1.Key + "," + integer1.Value + "])");
+                if (coordinateGroup.Length == 0) continue;
+                string codeLine = "listA.append([" + coordinateGroup[0];
+
+                for (int i = 1; i < coordinateGroup.Length ; i++)
+                {
+                    var val = coordinateGroup[i];
+                    codeLine += "," + val;
+                }
+                codeLine += "])";
+                code.Insert(6, codeLine);
             }
+
             var codeLines = code.ToArray();
             File.WriteAllLines(pythonApp, codeLines);
             p.StartInfo.RedirectStandardOutput = true;

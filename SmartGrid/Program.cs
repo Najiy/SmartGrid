@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Xml;
 
@@ -16,7 +17,7 @@ namespace SmartGrid
 
         private static void Main(string[] args)
         {
-
+           
             //            string fileFormat = "";
 
             //            while (!(fileFormat == "OSM" || fileFormat == "OR"))
@@ -27,15 +28,15 @@ namespace SmartGrid
             //            if (fileFormat == "OSM") OsmLoad();
             //            else OpenRoadLoad();
 
-            SmartGrid ASmartGrid = SmartGrid.FromOSOpenRoads(OpenRoadLoad(@"D:\BiRT\data\OSOpenRoads_NA.gml"));
+            SmartGrid BSmartGrid = SmartGrid.FromOSOpenRoads(OpenRoadLoad(@"D:\BiRT\data\OSOpenRoads_NW.gml"));
             
-            SmartGrid BSmartGrid =  SmartGrid.FromOSM(OsmLoad());
-            ASmartGrid.RoadNodes.ToList().ForEach(x => BSmartGrid.RoadNodes.Add(x.Key, x.Value));
-            ASmartGrid.RoadLinks.ToList().ForEach(x=>BSmartGrid.RoadLinks.Add(x.Key,x.Value));
+      //      SmartGrid BSmartGrid =  SmartGrid.FromOSM(OsmLoad());
+//            ASmartGrid.RoadNodes.ToList().ForEach(x => BSmartGrid.RoadNodes.Add(x.Key, x.Value));
+//            ASmartGrid.RoadLinks.ToList().ForEach(x=>BSmartGrid.RoadLinks.Add(x.Key,x.Value));
             //dictionaryFrom.ToList().ForEach(x => dictionaryTo.Add(x.Key, x.Value));
            
             BSmartGrid.GeneratePNG(57,-8,58,-7);
-//            smartGrid.GeneratePNG(57, -8, 58, -7);
+
             var a = BSmartGrid.RoadNodes.First().Key;
             var b = BSmartGrid.RoadNodes.ElementAt(4).Key;
             var c = BSmartGrid.RoadNodes.ElementAt(6).Key;
