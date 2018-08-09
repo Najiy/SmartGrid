@@ -42,10 +42,10 @@ namespace SmartGrid
                 {
                     case ".osm":
                         Console.WriteLine($"OSM {Path.GetFileNameWithoutExtension(path)}");
-                        OSMRoads.OSMRoads osmgrid = new OSMRoads.OSMRoads();
-
-                        osmgrid.LoadFile(path);
-                        osmgrid.WriteToFile();
+//                        OSMRoads.OSMRoads osmgrid = new OSMRoads.OSMRoads();
+//
+//                        osmgrid.LoadFile(path);
+//                        osmgrid.WriteToFile();
 
                         Console.ReadLine();
                         break;
