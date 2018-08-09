@@ -1,19 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SmartGrid
 {
     public class LatLonConversions
     {
-        const double a = 6377563.396;
-        const double b = 6356256.91;
-     
+        private const double a = 6377563.396;
+        private const double b = 6356256.91;
 
+        private static double lat, lng;
 
-        static double lat, lng;
-
-        public LatLonConversions() { }
+        public LatLonConversions()
+        {
+        }
 
         private static double Deg2Rad(double x)
         {
@@ -171,7 +169,6 @@ namespace SmartGrid
                 + (XII * Math.Pow(E - E0, 5.0))
                 - (XIIA * Math.Pow(E - E0, 7.0));
 
-
             lat = Rad2Deg(phi);
             lng = Rad2Deg(lambda);
             // convert to WGS84
@@ -184,6 +181,7 @@ namespace SmartGrid
     public class RefEll
     {
         public double maj, min, ecc;
+
         public RefEll(double major, double minor)
         {
             maj = major;

@@ -5,7 +5,6 @@ import sys
 
 listA = []
 
-
 fig = plt.figure()
 axes = plt.gca()
 fig.add_axes(axes)
