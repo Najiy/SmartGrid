@@ -14,44 +14,30 @@ namespace SmartGrid
 
         private static void Main(string[] args)
         {
-            //            string fileFormat = "";
-            //            while (!(fileFormat == "OSM" || fileFormat == "OR"))
-            //            {
-            //                Console.WriteLine("Loading OSM or OpenRoad? (OSM||OR)");
-            //                fileFormat = Console.ReadLine().ToUpper();
-            //            }
-            //            if (fileFormat == "OSM") OsmLoad();
-            //            else OpenRoadLoad();
+     
             XmlDocument or = new XmlDocument();
-            or.Load(@"D:\BiRT\data\OSOpenRoads_HZ.gml");
+            or.Load(@"D:\BiRT\data\OSOpenRoads_SO.gml");
             XmlDocument osm = new XmlDocument();
-            osm.Load(@"D:\BiRT\SmartGrid\SmartGrid\bin\Debug\netcoreapp2.0\map.osm");
+            osm.Load(@"D:\BiRT\SmartGrid\SmartGrid\bin\Debug\netcoreapp2.0\Birmingham.osm");
             //edit for different bounds
             var maxCoord = new GeoCoordinate()
             {
-                Latitude = 110,
-                Longitude = 110
+                Latitude = (decimal) 52.5640948365028,
+                Longitude = (decimal) -1.76105252815058
             };
             var minCoord = new GeoCoordinate()
             {
-                Latitude = (decimal)-110,
-                Longitude = (decimal)-110
+                Latitude = (decimal) 52.3953436,
+                Longitude = (decimal)-2.0094665
             };
-            SmartGrid BSmartGrid = SmartGrid.FromOSM(osm,maxCoord,minCoord,new SmartGrid());
-            BSmartGrid = SmartGrid.FromOSOpenRoads(or,maxCoord,minCoord,BSmartGrid);
-            //FromOSOpenRoads(or,maxCoord,minCoord);
-
-            //      SmartGrid BSmartGrid =  SmartGrid.FromOSM(OsmLoad());
-            //            ASmartGrid.RoadNodes.ToList().ForEach(x => BSmartGrid.RoadNodes.Add(x.Key, x.Value));
-            //            ASmartGrid.RoadLinks.ToList().ForEach(x=>BSmartGrid.RoadLinks.Add(x.Key,x.Value));
-            //dictionaryFrom.ToList().ForEach(x => dictionaryTo.Add(x.Key, x.Value));
-
+//           
+            SmartGrid BSmartGrid = SmartGrid.FromOSOpenRoads(or,maxCoord,minCoord,new SmartGrid());
+            BSmartGrid = SmartGrid.FromOSM(osm,maxCoord,minCoord,BSmartGrid);
+            InitialiseDatabase id = new InitialiseDatabase();
+            id.PopulateDatabase(BSmartGrid);
             BSmartGrid.GeneratePNG();
 
-            var a = BSmartGrid.RoadNodes.First().Key;
-            var b = BSmartGrid.RoadNodes.ElementAt(4).Key;
-            var c = BSmartGrid.RoadNodes.ElementAt(6).Key;
-            Console.WriteLine(BSmartGrid.GetAngle(a, b, c));
+
             MapProcessor.ProcessFolder(verboseLoad: false, verboseWrite: false);
 
             Console.WriteLine(" end");

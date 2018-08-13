@@ -68,6 +68,7 @@ namespace SmartGrid
 
         public static SmartGrid FromOSM(XmlDocument osm, GeoCoordinate maxCoordinate,GeoCoordinate minCoordinate, SmartGrid r)
         {
+            
             Bounds bounds = new Bounds()
             {
                 MaxLat = maxCoordinate.Latitude,
@@ -78,6 +79,8 @@ namespace SmartGrid
             //navigate XML structure for relevant information
             for (int i = 0; i < osm.FirstChild.NextSibling.ChildNodes.Count; i++)
             {
+
+
                 var osmItem = osm.FirstChild.NextSibling.ChildNodes.Item(i);
 
                 switch (osmItem.Name.ToLower())
@@ -182,6 +185,7 @@ namespace SmartGrid
                         r.RoadLinks.Add(Id, link);
                         break;
                 }
+               
             }
          
             return r;
@@ -286,7 +290,8 @@ namespace SmartGrid
                                 }
 
                                 CreateNodes(CentrelineGeometry, r);
-                                AddLinks(CentrelineGeometry, r, Id);
+
+                                roadLink.Vectors = AddLinks(CentrelineGeometry, r);
 
                                 var blv = currentNode.ChildNodes.Where(x => x.Name == "net:beginLifespanVersion");
 
@@ -351,9 +356,9 @@ namespace SmartGrid
         }
 
        
-        private static void AddLinks(List<GeoCoordinate> CentrelineGeometry, SmartGrid r, string Id)
+        private static List<RoadVector> AddLinks(List<GeoCoordinate> CentrelineGeometry, SmartGrid r)
         {
-            RoadLink link = new RoadLink();
+           
             List<RoadVector> vectors = new List<RoadVector>();
             for (var index = 1; index < CentrelineGeometry.Count - 2; index++)
             {
@@ -370,10 +375,10 @@ namespace SmartGrid
                 };
                 vectors.Add(roadVector);
             }
-            link.Vectors = vectors;
+         
 
-            var key = Id;
-            r.RoadLinks.Add(key, link);
+           
+            return vectors;
         }
 
         //used for intermediate nodes that don't appear in .gml files
