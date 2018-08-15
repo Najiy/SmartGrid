@@ -2,11 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
-//using System.Windows.Forms.DataVisualization.Charting;
 using System.IO;
-
-//using System.Device.Location;
 using System.Linq;
 using System.Xml;
 
@@ -53,7 +49,7 @@ namespace SmartGrid
         public Dictionary<string, string> Descriptors { get; set; }
     }
 
-    internal class SmartGrid
+    public class SmartGrid
     {
         // the key will be ids and values the point themeselves, using dictionary so access to node is O(1)
         public Dictionary<string, RoadNode> RoadNodes { get; set; }
@@ -79,8 +75,6 @@ namespace SmartGrid
             //navigate XML structure for relevant information
             for (int i = 0; i < osm.FirstChild.NextSibling.ChildNodes.Count; i++)
             {
-
-
                 var osmItem = osm.FirstChild.NextSibling.ChildNodes.Item(i);
 
                 switch (osmItem.Name.ToLower())
@@ -110,7 +104,11 @@ namespace SmartGrid
                             {
                                 Descriptors = new Dictionary<string, string>()
                             };
-                            n.Descriptors.Add("Visible", osmItem.Attributes.GetNamedItem("visible").Value);
+                            try
+                            {
+                                n.Descriptors.Add("Visible", osmItem.Attributes.GetNamedItem("visible").Value);
+                            }
+                            catch { }
                             n.Descriptors.Add("Version", osmItem.Attributes.GetNamedItem("version").Value);
                             n.Descriptors.Add("Changeset", osmItem.Attributes.GetNamedItem("changeset").Value);
                             n.Descriptors.Add("Timestamp", osmItem.Attributes.GetNamedItem("timestamp").Value);
@@ -143,7 +141,7 @@ namespace SmartGrid
                         };
 
                         var Id = "OSM:" + osmItem.Attributes.GetNamedItem("id").Value;
-                        roadlink.Descriptors.Add("Visible", osmItem.Attributes.GetNamedItem("visible").Value);
+//                        roadlink.Descriptors.Add("Visible", osmItem.Attributes.GetNamedItem("visible").Value);
                         roadlink.Descriptors.Add("Version", osmItem.Attributes.GetNamedItem("version").Value);
                         roadlink.Descriptors.Add("Changeset", osmItem.Attributes.GetNamedItem("changeset").Value);
                         roadlink.Descriptors.Add("Timestamp", osmItem.Attributes.GetNamedItem("timestamp").Value);
@@ -441,19 +439,11 @@ namespace SmartGrid
             return r * c;
         }
 
-        public void GeneratePNG()
+        public void GeneratePNG(KeyValuePair<int,int> tileBounds)
         {
             // return roadlinks in range specified by parameters
             var linksInRange = RoadLinks;
-            //RoadLinks.Where(x => x.Value.Vectors.TrueForAll(y => (minlat < RoadNodes[y.NodeFrom].Coordinate.Latitude
-            //                                && maxlat > RoadNodes[y.NodeFrom].Coordinate.Latitude &&
-            //                                minlat < RoadNodes[y.NodeFrom].Coordinate.Longitude &&
-            //                                maxlat > RoadNodes[y.NodeFrom].Coordinate.Longitude) &&
-            //                                (minlat < RoadNodes[y.NodeTo].Coordinate.Latitude
-            //                                   && maxlat > RoadNodes[y.NodeTo].Coordinate.Latitude &&
-            //                               minlat < RoadNodes[y.NodeTo].Coordinate.Longitude &&
-            //                               maxlat > RoadNodes[y.NodeTo].Coordinate.Longitude)));
-            //Change to python filepath
+      
             string python = @"D:\Program Files (x86)\python\python.exe";
             string pythonApp = @"D:\BiRT\SmartGrid\SmartGrid\plot_graph.py";
             Process p = new Process();
@@ -488,7 +478,7 @@ namespace SmartGrid
                     codeLine += "," + val;
                 }
                 codeLine += "])";
-                code.Insert(6, codeLine);
+                code.Insert(10, codeLine);
             }
 
             var codeLines = code.ToArray();
@@ -499,7 +489,14 @@ namespace SmartGrid
             p.StartInfo.CreateNoWindow = true;
 
             p.StartInfo.FileName = "python";
-            p.StartInfo.Arguments = pythonApp;
+            OsmTileConversion c = new OsmTileConversion();
+            var max = c.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.Key, tileBounds.Value - 1), 16);
+            var min = c.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.Key - 1, tileBounds.Value), 16);
+            p.StartInfo.Arguments = pythonApp +  " " + tileBounds.Key + " " + tileBounds.Value
+                +" "+max.Latitude.ToString().Remove(max.Latitude.ToString().Length-1) + 
+                " " + max.Longitude.ToString().Remove(max.Longitude.ToString().Length - 1) 
+                + " " + min.Latitude.ToString().Remove(min.Latitude.ToString().Length - 1) +
+                " " + min.Longitude.ToString().Remove(min.Longitude.ToString().Length - 1);
 
             p.Start();
             using (StreamReader reader = p.StandardOutput)

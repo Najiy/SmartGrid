@@ -1,101 +1,63 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Xml;
-
+using OsmSharp;
 namespace SmartGrid
 {
     internal class Program
     {
-        private static void Print(XmlNode node, string prefix = "", Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None)
+        private static void Print(XmlNode node, string prefix = "",
+            Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None)
         {
             Console.Write($"{prefix} {Newtonsoft.Json.JsonConvert.SerializeXmlNode(node, formatting)}");
         }
 
         private static void Main(string[] args)
         {
-     
-            XmlDocument or = new XmlDocument();
-            or.Load(@"D:\BiRT\data\OSOpenRoads_SO.gml");
-            XmlDocument osm = new XmlDocument();
-            osm.Load(@"D:\BiRT\SmartGrid\SmartGrid\bin\Debug\netcoreapp2.0\Birmingham.osm");
-            //edit for different bounds
-            var maxCoord = new GeoCoordinate()
-            {
-                Latitude = (decimal) 52.5640948365028,
-                Longitude = (decimal) -1.76105252815058
-            };
-            var minCoord = new GeoCoordinate()
-            {
-                Latitude = (decimal) 52.3953436,
-                Longitude = (decimal)-2.0094665
-            };
-//           
-            SmartGrid BSmartGrid = SmartGrid.FromOSOpenRoads(or,maxCoord,minCoord,new SmartGrid());
-            BSmartGrid = SmartGrid.FromOSM(osm,maxCoord,minCoord,BSmartGrid);
-            InitialiseDatabase id = new InitialiseDatabase();
-            id.PopulateDatabase(BSmartGrid);
-            BSmartGrid.GeneratePNG();
 
+            //take latlon and find osm tile bounds defined for it
+            var latLon = LatLonConversions.ConvertOSToLatLon(181717.46, 658994.99);
+
+            OsmTileConversion conversion = new OsmTileConversion();
+            //
+            var OsmTile = conversion.CoordToOsmTile(new GeoCoordinate()
+            {
+                Latitude = (decimal)latLon.Latitude,
+                Longitude = (decimal)latLon.Longitude
+            }, 16);
+            //set tile bounds as bounds for smartgrid object
+//            var maxCoord = conversion.OsmTileToCoord(new KeyValuePair<int, int>(OsmTile.Key, OsmTile.Value - 1), 16);
+//            var minCoord =
+//                conversion.OsmTileToCoord(new KeyValuePair<int, int>(OsmTile.Key - 1, OsmTile.Value), 16);
+            //to be used if bounds aren't necessary
+                        var maxCoord = new GeoCoordinate()
+                        {
+                            Latitude = 1000,
+                            Longitude = 1000
+                        };
+                        var minCoord = new GeoCoordinate()
+                        {
+                            Latitude = -1000,
+                            Longitude = -1000
+                        };
+            XmlDocument or = new XmlDocument();
+            or.Load(@"D:\BiRT\data\OSOpenRoads_NW.gml");
+            XmlDocument osm = new XmlDocument();
+            osm.Load(@"D:\BiRT\SmartGrid\SmartGrid\bin\Debug\netcoreapp2.0\map (1).osm");
+            //smartgrid will only take values within the bounds.
+            //            SmartGrid BSmartGrid = SmartGrid.FromOSOpenRoads(or, maxCoord, minCoord, new SmartGrid());
+            SmartGrid BSmartGrid = SmartGrid.FromOSM(osm, maxCoord, minCoord, new SmartGrid());
+
+            //            BSmartGrid.GeneratePNG(OsmTile);
+            WriteJson.CreateJsons(BSmartGrid);
 
             MapProcessor.ProcessFolder(verboseLoad: false, verboseWrite: false);
 
             Console.WriteLine(" end");
             Console.ReadLine();
         }
-
-//        private static OSOpenRoads.OSOpenRoads OpenRoadLoad(string filepath)
-//        {
-//            OSOpenRoads.OSOpenRoads orsg = new OSOpenRoads.OSOpenRoads();
-//            XmlDocument gml = new XmlDocument();
-//
-//            while (!File.Exists(filepath))
-//            {
-//                Console.WriteLine("Enter the .gml filepath");
-//                filepath = Console.ReadLine();
-//            }
-//            gml.Load(filepath);
-//            orsg.LoadFile(gml, true);
-//            //var extension = QueryExtension();
-//            //orsg.WriteToFile(extension: extension, verbose: true);
-//
-//            return orsg;
-//        }
-//
-//        private static OSMRoads.OSMRoads OsmLoad()
-//        {
-//            OSMRoads.OSMRoads sm = new OSMRoads.OSMRoads();
-//            XmlDocument osm = new XmlDocument();
-//
-//            if (!File.Exists($@"map.osm"))
-//            {
-//                var osmpath = "null";
-//
-//                while (!File.Exists(osmpath))
-//                {
-//                    Console.WriteLine("Enter .osm filepath: ");
-//                    osmpath = Console.ReadLine();
-//                }
-//            }
-//            else
-//            {
-//                osm.Load($@"map.osm");
-//            }
-//
-//            Console.WriteLine("Verbose on load (y/n): ");
-//            var verbose = (Console.ReadLine().ToLower() == "y");
-//
-//            sm.LoadFile(osm, verbose: verbose);
-//
-//            Console.WriteLine(" osm loaded");
-//
-//            var extension = QueryExtension();
-//            sm.WriteToFile(extension: extension);
-//
-//            Console.WriteLine("Done");
-//
-//            return sm;
-//        }
 
         private static string QueryExtension()
         {
@@ -111,3 +73,4 @@ namespace SmartGrid
         }
     }
 }
+
