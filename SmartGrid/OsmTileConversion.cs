@@ -4,18 +4,27 @@ using System.Text;
 
 namespace SmartGrid
 {
+    public class OsmTile
+    {
+        public int XCoord { get; set; }
+        public int YCoord { get; set; }
+    }
     class OsmTileConversion
     {
-        public KeyValuePair<int, int> CoordToOsmTile(GeoCoordinate node, int zoom)
+        public OsmTile CoordToOsmTile(GeoCoordinate node, int zoom)
         {
             
             var n =(decimal) Math.Pow(2,zoom);
-            var xTile =(int) Math.Round(n * ((node.Longitude + 180) / 360));
+            var xTile =(int) (n * ((node.Longitude + 180) / 360));
             var lat_rad = DegToRad(node.Latitude);
             var tanLat = Math.Tan((double) lat_rad);
             var secLat = Secant((double) lat_rad);
-            var yTile =(int) Math.Round(n * (decimal) (1 - (Math.Log(tanLat + secLat)) /Math.PI) /2);
-            var tileLocation = new KeyValuePair<int, int>(xTile, yTile);
+            var yTile =(int) (n * (decimal) (1 - (Math.Log(tanLat + secLat)) /Math.PI) /2);
+            var tileLocation = new OsmTile()
+            {
+                XCoord = xTile,
+                YCoord = yTile
+            };
             return tileLocation;
         }
 

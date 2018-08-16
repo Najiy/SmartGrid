@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace SmartGrid
@@ -6,11 +7,11 @@ namespace SmartGrid
     class JsonObject
     {
         public SmartGrid SmartGrid { get; set; }
-        public KeyValuePair<int,int> OsmTile { get; set; }
+        public OsmTile OsmTile { get; set; }
     }
     public static class WriteJson
     {
-        
+
         public static void CreateJsons(SmartGrid sg)
         {
             var path = System.IO.Path.GetDirectoryName(
@@ -20,12 +21,22 @@ namespace SmartGrid
             foreach (var node in sg.RoadNodes.Values)
             {
                 var osmTile = conversion.CoordToOsmTile(node.Coordinate, 16);
-                var jsonFilePath = (path + $"\\SmartGrid\\JSON\\{osmTile.Key}\\{osmTile.Value}.json");
-
-                var maxCoord =
-                    conversion.OsmTileToCoord(new KeyValuePair<int, int>(osmTile.Key, osmTile.Value - 1), 16);
-                var minCoord =
-                    conversion.OsmTileToCoord(new KeyValuePair<int, int>(osmTile.Key - 1, osmTile.Value), 16);
+                var jsonFilePath = (path + $"\\SmartGrid\\JSON\\{osmTile.XCoord}\\{osmTile.YCoord}.json");
+                //TODO: ISSUE HERE tile values correct but bounds arent sensical
+                var maxCoo =
+                    conversion.OsmTileToCoord(new KeyValuePair<int, int>(osmTile.XCoord, osmTile.YCoord), 16);
+                var minCoo =
+                    conversion.OsmTileToCoord(new KeyValuePair<int, int>(osmTile.XCoord + 1, osmTile.YCoord + 1), 16);
+                 var maxCoord = new GeoCoordinate()
+                 {
+                     Latitude = Math.Max(maxCoo.Latitude,minCoo.Latitude),
+                     Longitude = Math.Max(maxCoo.Longitude,minCoo.Longitude)
+                 };
+                var minCoord = new GeoCoordinate()
+                {
+                    Latitude = Math.Min(maxCoo.Latitude, minCoo.Latitude),
+                    Longitude = Math.Min(maxCoo.Longitude, minCoo.Longitude)
+                };
                 if (File.Exists(jsonFilePath)) continue;
                 var queriedSmartGrid = new SmartGrid()
                 {
@@ -54,7 +65,8 @@ namespace SmartGrid
                     {
                         try
                         {
-                            if (!IsWithin(sg.RoadNodes[link.NodeFrom].Coordinate, maxCoord, minCoord)) continue;
+                            if (!IsWithin(sg.RoadNodes[link.NodeFrom].Coordinate, maxCoord, minCoord) ||
+                                !IsWithin(sg.RoadNodes[link.NodeTo].Coordinate, maxCoord, minCoord)) continue;
                             linkInTile.Vectors.Add(link);
                             linkInTile.Descriptors = link.Descriptors;
                         }
@@ -64,7 +76,7 @@ namespace SmartGrid
                         linksInTile.Add(links.Key, linkInTile);
                 }
                 queriedSmartGrid.RoadLinks = linksInTile;
-            
+
                 var jsonObject = new JsonObject()
                 {
                     OsmTile = osmTile,

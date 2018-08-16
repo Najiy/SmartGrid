@@ -1,36 +1,49 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.lines as lines
-import sys
 import urllib.request
-from scipy.misc import imread
-from decimal import Decimal
+import json
+import sys 
 
-listA = []
+#filepath as argument
+with open(sys.argv[1]) as f:
+    data = json.load(f)
 
-listA.append([55.7752959982134,-5.48264974581061,55.7751428312336,-5.48253732857289])
-listA.append([55.7754312679236,-5.4828384115201,55.7753045773685,-5.48306366621972,55.7753045773685,-5.48306366621972,55.7752474783264,-5.4831652856906,55.7752474783264,-5.4831652856906,55.7751906663107,-5.48326629242805,55.7751906663107,-5.48326629242805,55.7749978793386,-5.48328592531414,55.7749978793386,-5.48328592531414,55.7748844498228,-5.48316413396082,55.7748844498228,-5.48316413396082,55.7748640904988,-5.48267738341022])
-
-
-xtile = sys.argv[1]
-ytile = sys.argv[2]
-max_lat = Decimal(sys.argv[3])
-max_lon = Decimal(sys.argv[4])
-min_lat = Decimal(sys.argv[5])
-min_lon = Decimal(sys.argv[6])
+road_nodes = data['SmartGrid']['RoadNodes']
+road_links = data['SmartGrid']['RoadLinks']
+osm_tile = data['OsmTile']
+xtile = osm_tile['XCoord']
+ytile = osm_tile['YCoord']
 address = 'http://a.tile.openstreetmap.fr/hot/16/{}/{}.png'.format(xtile, ytile)
 filename = '{}.{}.png'.format(xtile, ytile)
 urllib.request.urlretrieve(address, filename)
+list_osor = []
+list_osm = []
+q = []
+for i in road_links:
+    node = road_links[i]['Vectors']
+    for j in node:
+        q.append(road_nodes[j['NodeFrom']]['Coordinate']['Latitude'])
+        q.append(road_nodes[j['NodeFrom']]['Coordinate']['Longitude'])
+        q.append(road_nodes[j['NodeTo']]['Coordinate']['Latitude'])
+        q.append(road_nodes[j['NodeTo']]['Coordinate']['Longitude'])
+    list_osor.append(q)
+    q = []
 
-img = imread(filename)
-fig, ax = plt.subplots()
-ax.imshow(img)
-# fuck knows why this doesn't work 
-for vectors in listA:
-    for i in range(0, len(vectors)-4, 2):
+
+img = plt.imread(filename)
+
+fig = plt.subplots()
+
+for vectors in list_osor:
+    for i in range(0, len(vectors)-3, 2):
         x2 = vectors[i], vectors[i + 2]
         y2 = vectors[i+1], vectors[i + 3]
-        ax.plot(x2, y2, marker='o', color='firebrick')
+        plt.plot(x2, y2, marker='o', color='firebrick')
 
-ax.imshow(img, extent=[min_lat, max_lat, min_lon, max_lon])
+#pass following as arguments
+max_x = float(sys.argv[2])
+min_x = float(sys.argv[4])
+max_y = float(sys.argv[3])
+min_y = float(sys.argv[5])
+scale = (max_x - min_x) / (max_y - min_y)
+plt.imshow(img, extent=[min_x, max_x, min_y, max_y], aspect=scale)
 plt.show()

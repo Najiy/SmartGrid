@@ -439,7 +439,7 @@ namespace SmartGrid
             return r * c;
         }
 
-        public void GeneratePNG(KeyValuePair<int,int> tileBounds)
+        public void GeneratePNG(OsmTile tileBounds, string filePath)
         {
             // return roadlinks in range specified by parameters
             var linksInRange = RoadLinks;
@@ -447,42 +447,42 @@ namespace SmartGrid
             string python = @"D:\Program Files (x86)\python\python.exe";
             string pythonApp = @"D:\BiRT\SmartGrid\SmartGrid\plot_graph.py";
             Process p = new Process();
-            List<RoadVector[]> vectorList = linksInRange.Select(link => link.Value.Vectors.ToArray()).ToList();
-            List<string[]> coordinateList = new List<string[]>();
-            foreach (var vectorGroup in vectorList)
-            {
-                string coords = "";
-                foreach (var node in vectorGroup)
-                {
-                    coords += RoadNodes[node.NodeFrom].Coordinate.Latitude + " " +
-                              RoadNodes[node.NodeFrom].Coordinate.Longitude + " ";
-                    coords += RoadNodes[node.NodeTo].Coordinate.Latitude + " " +
-                              RoadNodes[node.NodeTo].Coordinate.Longitude + " ";
-                }
-                string[] array = coords.Split(" ");
-                array = array.Where(x => !string.IsNullOrEmpty(x)).ToArray();
-                coordinateList.Add(array);
-            }
-
-            var originalCode = File.ReadAllLines(pythonApp);
-            var code = File.ReadAllLines(pythonApp).ToList();
-
-            foreach (var coordinateGroup in coordinateList)
-            {
-                if (coordinateGroup.Length == 0) continue;
-                string codeLine = "listA.append([" + coordinateGroup[0];
-
-                for (int i = 1; i < coordinateGroup.Length; i++)
-                {
-                    var val = coordinateGroup[i];
-                    codeLine += "," + val;
-                }
-                codeLine += "])";
-                code.Insert(10, codeLine);
-            }
-
-            var codeLines = code.ToArray();
-            File.WriteAllLines(pythonApp, codeLines);
+//            List<RoadVector[]> vectorList = linksInRange.Select(link => link.Value.Vectors.ToArray()).ToList();
+//            List<string[]> coordinateList = new List<string[]>();
+//            foreach (var vectorGroup in vectorList)
+//            {
+//                string coords = "";
+//                foreach (var node in vectorGroup)
+//                {
+//                    coords += RoadNodes[node.NodeFrom].Coordinate.Latitude + " " +
+//                              RoadNodes[node.NodeFrom].Coordinate.Longitude + " ";
+//                    coords += RoadNodes[node.NodeTo].Coordinate.Latitude + " " +
+//                              RoadNodes[node.NodeTo].Coordinate.Longitude + " ";
+//                }
+//                string[] array = coords.Split(" ");
+//                array = array.Where(x => !string.IsNullOrEmpty(x)).ToArray();
+//                coordinateList.Add(array);
+//            }
+//
+//            var originalCode = File.ReadAllLines(pythonApp);
+//            var code = File.ReadAllLines(pythonApp).ToList();
+//
+//            foreach (var coordinateGroup in coordinateList)
+//            {
+//                if (coordinateGroup.Length == 0) continue;
+//                string codeLine = "listA.append([" + coordinateGroup[0];
+//
+//                for (int i = 1; i < coordinateGroup.Length; i++)
+//                {
+//                    var val = coordinateGroup[i];
+//                    codeLine += "," + val;
+//                }
+//                codeLine += "])";
+//                code.Insert(10, codeLine);
+//            }
+//
+//            var codeLines = code.ToArray();
+//            File.WriteAllLines(pythonApp, codeLines);
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardInput = true;
             p.StartInfo.RedirectStandardError = true;
@@ -490,13 +490,13 @@ namespace SmartGrid
 
             p.StartInfo.FileName = "python";
             OsmTileConversion c = new OsmTileConversion();
-            var max = c.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.Key, tileBounds.Value - 1), 16);
-            var min = c.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.Key - 1, tileBounds.Value), 16);
-            p.StartInfo.Arguments = pythonApp +  " " + tileBounds.Key + " " + tileBounds.Value
-                +" "+max.Latitude.ToString().Remove(max.Latitude.ToString().Length-1) + 
-                " " + max.Longitude.ToString().Remove(max.Longitude.ToString().Length - 1) 
-                + " " + min.Latitude.ToString().Remove(min.Latitude.ToString().Length - 1) +
-                " " + min.Longitude.ToString().Remove(min.Longitude.ToString().Length - 1);
+            var max = c.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.XCoord, tileBounds.YCoord - 1), 16);
+            var min = c.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.XCoord - 1, tileBounds.YCoord), 16);
+            p.StartInfo.Arguments = pythonApp +  " " + filePath
+                +" "+max.Latitude + 
+                " " + max.Longitude 
+                + " " + min.Latitude +
+                " " + min.Longitude;
 
             p.Start();
             using (StreamReader reader = p.StandardOutput)
@@ -505,7 +505,7 @@ namespace SmartGrid
                 Console.Write(result);
             }
 
-            File.WriteAllLines(pythonApp, originalCode);
+//            File.WriteAllLines(pythonApp, originalCode);
         }
     }
 }
