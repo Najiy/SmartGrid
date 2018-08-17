@@ -27,8 +27,8 @@ Generate a SmartGrid object given Coordinate bounds:
     };
     var minCoord = new GeoCoordinate()
     {
-        Latitude = -100,
-        Longitude = -100
+        Latitude = xMin,
+        Longitude = yMin
     };
     XmlDocument or = new XmlDocument();
     or.Load(OpenRoad file path);
