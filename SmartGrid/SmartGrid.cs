@@ -4,8 +4,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Runtime.Serialization.Json;
 using System.Windows.Forms;
 using System.Xml;
+using getAddress;
 
 /*
  * This class will serve as the base map structure that other map structures can cast to
@@ -406,6 +409,8 @@ namespace SmartGrid
             //change where necessary    
             string python = @"D:\Program Files (x86)\python\python.exe";
             string pythonApp = @"D:\BiRT\SmartGrid\SmartGrid\plot_graph.py";
+            var originalCode = File.ReadAllLines(pythonApp);
+            var code = File.ReadAllLines(pythonApp).ToList();
             Process p = new Process
             {
                 StartInfo =
@@ -422,11 +427,12 @@ namespace SmartGrid
             //feed latlon bounds and json filepath to python script
             var max = OsmTileConversion.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.XCoord, tileBounds.YCoord - 1), 16);
             var min = OsmTileConversion.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.XCoord - 1, tileBounds.YCoord), 16);
-            p.StartInfo.Arguments = pythonApp +  " " + filePath
-                +" "+max.Latitude + 
-                " " + max.Longitude 
-                + " " + min.Latitude +
-                " " + min.Longitude;
+            code.Insert(5, "max_x = " + max.Latitude);
+            code.Insert(5, "max_y = " + max.Longitude);
+            code.Insert(5, "min_x = " + min.Latitude);
+            code.Insert(5, "min_y = " + min.Longitude);
+            p.StartInfo.Arguments = pythonApp + " " + filePath;
+            File.WriteAllLines(pythonApp,code);
 
             p.Start();
             using (var reader = p.StandardOutput)
@@ -434,7 +440,13 @@ namespace SmartGrid
                 string result = reader.ReadToEnd();
                 Console.Write(result);
             }
+            File.WriteAllLines(pythonApp, originalCode);
+        }
 
+        public static RootObject reverseGeoCode(GeoCoordinate coordinate)
+        {
+            return global::getAddress.getAddress.findAddress((double)coordinate.Latitude,
+                (double)coordinate.Longitude);
         }
     }
 }

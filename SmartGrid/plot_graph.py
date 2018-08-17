@@ -3,6 +3,10 @@ import urllib.request
 import json
 import sys 
 
+min_y = -5.1580810546875000
+min_x = 54.927141864546517641639362899
+max_y = -5.152587890625000
+max_x = 54.93029820955953178407941857
 #filepath as argument
 with open(sys.argv[1]) as f:
     data = json.load(f)
@@ -55,10 +59,6 @@ for vectors in list_osm:
         plt.plot(x2, y2, marker='o', color='blue')
 
 
-max_x = float(sys.argv[2])
-min_x = float(sys.argv[4])
-max_y = float(sys.argv[3])
-min_y = float(sys.argv[5])
 scale = (max_x - min_x) / (max_y - min_y)
 plt.imshow(img, extent=[min_x, max_x, min_y, max_y], aspect=scale)
 plt.show()

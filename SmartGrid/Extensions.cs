@@ -12,7 +12,7 @@ namespace SmartGrid
 
             for (int i = 0; i < self.Count; i++)
             {
-                if (predicate.Invoke(self[i]) == true)
+                if (predicate.Invoke(self[i]))
                 {
                     newlist.Add(self[i]);
                 }
@@ -27,7 +27,7 @@ namespace SmartGrid
 
             for (int i = 0; i < self.Count; i++)
             {
-                if (predicate.Invoke(self[i]) == true)
+                if (predicate.Invoke(self[i]))
                 {
                     return true;
                 }

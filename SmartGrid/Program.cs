@@ -3,7 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Xml;
+using System.IO;
 using OsmSharp;
+using getAddress;
+using getAddress = getAddress.getAddress;
+
+
 namespace SmartGrid
 {
     internal class Program
@@ -19,11 +24,11 @@ namespace SmartGrid
 
             //take latlon and find osm tile bounds defined for it
 
+
             var maxCoord = new GeoCoordinate()
             {
-                Latitude = (decimal)100
-               ,
-                Longitude = (decimal)100
+                Latitude = (decimal) 52.4692414723456,
+                Longitude = (decimal) -1.85738799654234
             };
             var minCoord = new GeoCoordinate()
             {
@@ -37,10 +42,6 @@ namespace SmartGrid
             //smartgrid will only take values within the bounds.
             SmartGrid BSmartGrid = SmartGrid.FromOSOpenRoads(or, maxCoord, minCoord, new SmartGrid());
             BSmartGrid = SmartGrid.FromOSM(osm, maxCoord, minCoord, BSmartGrid);
-
-
-
-
             SmartGrid.GeneratePNG(new OsmTile() { XCoord = 31830, YCoord = 20752 }, "D:/BiRT/SmartGrid/SmartGrid/bin/Debug/netcoreapp2.0/SmartGrid/JSON/31830/20752.json");
             //            WriteJson.CreateJsons(BSmartGrid);
 
