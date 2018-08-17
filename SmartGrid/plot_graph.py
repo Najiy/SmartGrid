@@ -18,15 +18,24 @@ urllib.request.urlretrieve(address, filename)
 list_osor = []
 list_osm = []
 q = []
+p=[]
 for i in road_links:
     node = road_links[i]['Vectors']
     for j in node:
-        q.append(road_nodes[j['NodeFrom']]['Coordinate']['Latitude'])
-        q.append(road_nodes[j['NodeFrom']]['Coordinate']['Longitude'])
-        q.append(road_nodes[j['NodeTo']]['Coordinate']['Latitude'])
-        q.append(road_nodes[j['NodeTo']]['Coordinate']['Longitude'])
+        if 'OSOR' in j['NodeFrom']:
+            q.append(road_nodes[j['NodeFrom']]['Coordinate']['Latitude'])
+            q.append(road_nodes[j['NodeFrom']]['Coordinate']['Longitude'])
+            q.append(road_nodes[j['NodeTo']]['Coordinate']['Latitude'])
+            q.append(road_nodes[j['NodeTo']]['Coordinate']['Longitude'])
+        if 'OSM' in j['NodeFrom']:
+            p.append(road_nodes[j['NodeFrom']]['Coordinate']['Latitude'])
+            p.append(road_nodes[j['NodeFrom']]['Coordinate']['Longitude'])
+            p.append(road_nodes[j['NodeTo']]['Coordinate']['Latitude'])
+            p.append(road_nodes[j['NodeTo']]['Coordinate']['Longitude'])
     list_osor.append(q)
+    list_osm.append(p)
     q = []
+    p =[]
 
 
 img = plt.imread(filename)
@@ -39,7 +48,13 @@ for vectors in list_osor:
         y2 = vectors[i+1], vectors[i + 3]
         plt.plot(x2, y2, marker='o', color='firebrick')
 
-#pass following as arguments
+for vectors in list_osm:
+    for i in range(0, len(vectors)-3, 2):
+        x2 = vectors[i], vectors[i + 2]
+        y2 = vectors[i+1], vectors[i + 3]
+        plt.plot(x2, y2, marker='o', color='blue')
+
+
 max_x = float(sys.argv[2])
 min_x = float(sys.argv[4])
 max_y = float(sys.argv[3])

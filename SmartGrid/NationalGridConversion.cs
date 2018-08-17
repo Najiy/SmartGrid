@@ -9,9 +9,7 @@ namespace SmartGrid
 
         private static double lat, lng;
 
-        public LatLonConversions()
-        {
-        }
+
 
         private static double Deg2Rad(double x)
         {

@@ -17,16 +17,16 @@ namespace SmartGrid
             var path = System.IO.Path.GetDirectoryName(
                 System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase);
             path = path.Substring(6);
-            OsmTileConversion conversion = new OsmTileConversion();
+           
             foreach (var node in sg.RoadNodes.Values)
             {
-                var osmTile = conversion.CoordToOsmTile(node.Coordinate, 16);
+                var osmTile = OsmTileConversion.CoordToOsmTile(node.Coordinate, 16);
                 var jsonFilePath = (path + $"\\SmartGrid\\JSON\\{osmTile.XCoord}\\{osmTile.YCoord}.json");
-                //TODO: ISSUE HERE tile values correct but bounds arent sensical
+                
                 var maxCoo =
-                    conversion.OsmTileToCoord(new KeyValuePair<int, int>(osmTile.XCoord, osmTile.YCoord), 16);
+                    OsmTileConversion.OsmTileToCoord(new KeyValuePair<int, int>(osmTile.XCoord, osmTile.YCoord), 16);
                 var minCoo =
-                    conversion.OsmTileToCoord(new KeyValuePair<int, int>(osmTile.XCoord + 1, osmTile.YCoord + 1), 16);
+                    OsmTileConversion.OsmTileToCoord(new KeyValuePair<int, int>(osmTile.XCoord + 1, osmTile.YCoord + 1), 16);
                  var maxCoord = new GeoCoordinate()
                  {
                      Latitude = Math.Max(maxCoo.Latitude,minCoo.Latitude),
@@ -68,7 +68,7 @@ namespace SmartGrid
                             if (!IsWithin(sg.RoadNodes[link.NodeFrom].Coordinate, maxCoord, minCoord) ||
                                 !IsWithin(sg.RoadNodes[link.NodeTo].Coordinate, maxCoord, minCoord)) continue;
                             linkInTile.Vectors.Add(link);
-                            linkInTile.Descriptors = link.Descriptors;
+                            
                         }
                         catch { }
                     }

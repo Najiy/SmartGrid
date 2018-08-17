@@ -9,9 +9,9 @@ namespace SmartGrid
         public int XCoord { get; set; }
         public int YCoord { get; set; }
     }
-    class OsmTileConversion
+   static  class OsmTileConversion
     {
-        public OsmTile CoordToOsmTile(GeoCoordinate node, int zoom)
+        public static OsmTile CoordToOsmTile(GeoCoordinate node, int zoom)
         {
             
             var n =(decimal) Math.Pow(2,zoom);
@@ -28,7 +28,7 @@ namespace SmartGrid
             return tileLocation;
         }
 
-        public GeoCoordinate OsmTileToCoord(KeyValuePair<int, int> osmTile, int zoom)
+        public static GeoCoordinate OsmTileToCoord(KeyValuePair<int, int> osmTile, int zoom)
         {
             var n = (decimal) Math.Pow(2, zoom);
             var longitude = osmTile.Key / n * 360 - 180;
@@ -41,11 +41,11 @@ namespace SmartGrid
             };
         }
 
-        private double Secant(double x)
+        private static double Secant(double x)
         {
             return (1 / Math.Cos(x));
         }
-        public decimal DegToRad(decimal degrees)
+        public static decimal DegToRad(decimal degrees)
         {
             return degrees *(decimal) Math.PI / 180;
         }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 using System.Xml;
 
 /*
@@ -12,7 +13,7 @@ using System.Xml;
 
 namespace SmartGrid
 {
-    // using custom GeoCoordinate structure - keeping most relevant data for json parsing
+    
     public struct Bounds
     {
         public decimal MaxLon { get; set; }
@@ -20,7 +21,7 @@ namespace SmartGrid
         public decimal MaxLat { get; set; }
         public decimal MinLat { get; set; }
     }
-
+    // using custom GeoCoordinate structure - keeping most relevant data for json parsing
     public struct GeoCoordinate
     {
         public decimal Latitude { get; set; }
@@ -37,7 +38,7 @@ namespace SmartGrid
     {
         public string NodeFrom { get; set; }
         public string NodeTo { get; set; }
-        public Dictionary<string, string> Descriptors { get; set; }
+        
     }
 
     public struct RoadLink
@@ -45,7 +46,7 @@ namespace SmartGrid
         public List<RoadVector> Vectors { get; set; }   // Use this list of vectors instead of list definition of nodes
 
         //, this way we can add stuff like colours to road vectors - like google map traffic
-        // public List<string> Nodes { get; set; }         // <-- refactor the logic to this part in favour of the above ^^^
+        
         public Dictionary<string, string> Descriptors { get; set; }
     }
 
@@ -61,7 +62,7 @@ namespace SmartGrid
             RoadNodes = new Dictionary<string, RoadNode>();
             RoadLinks = new Dictionary<string, RoadLink>();
         }
-
+        //Parse OSM data from XML structure 
         public static SmartGrid FromOSM(XmlDocument osm, GeoCoordinate maxCoordinate,GeoCoordinate minCoordinate, SmartGrid r)
         {
             
@@ -79,19 +80,6 @@ namespace SmartGrid
 
                 switch (osmItem.Name.ToLower())
                 {
-                    case "bounds":
-
-                        //                        Bounds.MaxLat = decimal.Parse(osmItem.Attributes.GetNamedItem("maxlat").Value);
-                        //                        Bounds.MaxLon = decimal.Parse(osmItem.Attributes.GetNamedItem("maxlon").Value);
-                        //                        Bounds.MinLat = decimal.Parse(osmItem.Attributes.GetNamedItem("minlat").Value);
-                        //                        Bounds.MinLon = decimal.Parse(osmItem.Attributes.GetNamedItem("minlon").Value);
-                        //
-                        //                        if (verbose)
-                        //                            Console.WriteLine(
-                        //                                $"Bounds << {Bounds.MinLat} {Bounds.MinLon} {Bounds.MaxLat} {Bounds.MaxLon}");
-
-                        break;
-
                     case "node":
                         GeoCoordinate coordinate = new GeoCoordinate()
                         {
@@ -188,7 +176,7 @@ namespace SmartGrid
          
             return r;
         }
-
+        //Parse OpenRoad data from XML structure
         public static SmartGrid FromOSOpenRoads(XmlDocument or, GeoCoordinate maxCoordinate, GeoCoordinate minCoordinate, SmartGrid r)
         {
             
@@ -211,31 +199,6 @@ namespace SmartGrid
                     string Id;
                     switch (currentNode.Name)
                     {
-                        case "gml:Envelope":
-                            for (int z = 0; z < currentNode.ChildNodes.Count; z++)
-                            {
-                                var name = currentNode.ChildNodes.Item(z).Name;
-                                switch (name)
-                                {
-                                    case "gml:lowerCorner":
-                                        var lowerCorner = currentNode.ChildNodes.Item(0).InnerText.Split(" ");
-                                        //                                        Bounds.MinLat = decimal.Parse(lowerCorner[0]);
-                                        //                                        Bounds.MinLon = decimal.Parse(lowerCorner[1]);
-                                        break;
-
-                                    case "gml:upperCorner":
-                                        var upperCorner = currentNode.ChildNodes.Item(1).InnerText.Split(" ");
-                                        //                                        Bounds.MaxLat = decimal.Parse(upperCorner[0]);
-                                        //                                        Bounds.MaxLon = decimal.Parse(upperCorner[1]);
-                                        break;
-                                }
-
-                                //                                if (verbose)
-                                //                                    Console.WriteLine($"Bounds << MaxLat {Bounds.MaxLat}  MaxLon {Bounds.MaxLon} " +
-                                //                                                   $" MinLat {Bounds.MinLat}  MinLon {Bounds.MinLon}");
-                            }
-                            break;
-
                         case "road:RoadNode":
                             var roadNode = new RoadNode() { Descriptors = new Dictionary<string, string>() };
                             Id = "OSOR:" + currentNode.Attributes.GetNamedItem("gml:id").Value;
@@ -328,9 +291,7 @@ namespace SmartGrid
                                 roadLink.Descriptors.Add("RoadNumberTOID",
                                     numbertoid.FirstOrDefault()?.Attributes.GetNamedItem("xlink:href").Value);
 
-                                //                                if (verbose)
-                                //                                    Console.WriteLine($"Link << {roadLink.Id} {roadLink.RoadName} " +
-                                //                                                      $"{roadLink.RoadType} {roadLink.RoadClassification}");
+                                
                                 try
                                 {
                                     if (roadLink.Vectors.Count > 0)
@@ -353,15 +314,15 @@ namespace SmartGrid
                    coord.Longitude > bound.MinLon);
         }
 
-       
-        private static List<RoadVector> AddLinks(List<GeoCoordinate> CentrelineGeometry, SmartGrid r)
+      
+        private static List<RoadVector> AddLinks(List<GeoCoordinate> centrelineGeometry, SmartGrid r)
         {
            
             List<RoadVector> vectors = new List<RoadVector>();
-            for (var index = 1; index < CentrelineGeometry.Count - 2; index++)
+            for (var index = 1; index < centrelineGeometry.Count - 2; index++)
             {
-                GeoCoordinate from = CentrelineGeometry[index];
-                GeoCoordinate to = CentrelineGeometry[index + 1];
+                GeoCoordinate from = centrelineGeometry[index];
+                GeoCoordinate to = centrelineGeometry[index + 1];
                 var fromNode = r.RoadNodes.Where(x =>
                     x.Value.Coordinate.Latitude.Equals(from.Latitude) && x.Value.Coordinate.Longitude.Equals(from.Longitude));
                 var toNode = r.RoadNodes.Where(x =>
@@ -385,8 +346,7 @@ namespace SmartGrid
             for (int i = 1; i < coordinates.Count - 1; i++)
             {
                 var coordinate = coordinates[i];
-                //                var hash = GetHash(coordinate.Latitude + coordinate.Longitude.ToString());
-                //var id = GetHashString(hash.ToString());
+             
                 var id = "OSOR:" + coordinate.Latitude + coordinate.Longitude;
                 var node = new RoadNode()
                 {
@@ -410,7 +370,7 @@ namespace SmartGrid
 
         public double GetAngle(string roadNode1, string roadNodeOrigin, string roadNode3)
         {
-            // @Shyam compute the angle based on the given road nodes
+           
             //Cosine law
 
             var ab = GetDistance(roadNode1, roadNodeOrigin);
@@ -420,7 +380,7 @@ namespace SmartGrid
             return theta;
         }
 
-        //Possible rounding errors
+       
         public double GetDistance(string roadNode1, string roadNode2)
         {
             const int r = 6371000; //Earth's Radius in meters
@@ -434,64 +394,34 @@ namespace SmartGrid
 
             //Haversine Formula
             var a = Math.Sin((double)latDifference / 2) * Math.Sin((double)latDifference / 2) +
-                    Math.Cos((double)lat1) * Math.Cos((double)lat2) * Math.Sin((double)longDifference / 2) * Math.Sin((double)longDifference / 2);
+                    Math.Cos((double)lat1) * Math.Cos((double)lat2) * Math.Sin((double)longDifference / 2) 
+                    * Math.Sin((double)longDifference / 2);
             var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
             return r * c;
         }
 
-        public void GeneratePNG(OsmTile tileBounds, string filePath)
+        public static void GeneratePNG(OsmTile tileBounds, string filePath)
         {
-            // return roadlinks in range specified by parameters
-            var linksInRange = RoadLinks;
-      
+            
+            //change where necessary    
             string python = @"D:\Program Files (x86)\python\python.exe";
             string pythonApp = @"D:\BiRT\SmartGrid\SmartGrid\plot_graph.py";
-            Process p = new Process();
-//            List<RoadVector[]> vectorList = linksInRange.Select(link => link.Value.Vectors.ToArray()).ToList();
-//            List<string[]> coordinateList = new List<string[]>();
-//            foreach (var vectorGroup in vectorList)
-//            {
-//                string coords = "";
-//                foreach (var node in vectorGroup)
-//                {
-//                    coords += RoadNodes[node.NodeFrom].Coordinate.Latitude + " " +
-//                              RoadNodes[node.NodeFrom].Coordinate.Longitude + " ";
-//                    coords += RoadNodes[node.NodeTo].Coordinate.Latitude + " " +
-//                              RoadNodes[node.NodeTo].Coordinate.Longitude + " ";
-//                }
-//                string[] array = coords.Split(" ");
-//                array = array.Where(x => !string.IsNullOrEmpty(x)).ToArray();
-//                coordinateList.Add(array);
-//            }
-//
-//            var originalCode = File.ReadAllLines(pythonApp);
-//            var code = File.ReadAllLines(pythonApp).ToList();
-//
-//            foreach (var coordinateGroup in coordinateList)
-//            {
-//                if (coordinateGroup.Length == 0) continue;
-//                string codeLine = "listA.append([" + coordinateGroup[0];
-//
-//                for (int i = 1; i < coordinateGroup.Length; i++)
-//                {
-//                    var val = coordinateGroup[i];
-//                    codeLine += "," + val;
-//                }
-//                codeLine += "])";
-//                code.Insert(10, codeLine);
-//            }
-//
-//            var codeLines = code.ToArray();
-//            File.WriteAllLines(pythonApp, codeLines);
-            p.StartInfo.RedirectStandardOutput = true;
-            p.StartInfo.RedirectStandardInput = true;
-            p.StartInfo.RedirectStandardError = true;
-            p.StartInfo.CreateNoWindow = true;
+            Process p = new Process
+            {
+                StartInfo =
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardInput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    FileName = "python"
+                }
+            };
 
-            p.StartInfo.FileName = "python";
-            OsmTileConversion c = new OsmTileConversion();
-            var max = c.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.XCoord, tileBounds.YCoord - 1), 16);
-            var min = c.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.XCoord - 1, tileBounds.YCoord), 16);
+
+            //feed latlon bounds and json filepath to python script
+            var max = OsmTileConversion.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.XCoord, tileBounds.YCoord - 1), 16);
+            var min = OsmTileConversion.OsmTileToCoord(new KeyValuePair<int, int>(tileBounds.XCoord - 1, tileBounds.YCoord), 16);
             p.StartInfo.Arguments = pythonApp +  " " + filePath
                 +" "+max.Latitude + 
                 " " + max.Longitude 
@@ -499,13 +429,12 @@ namespace SmartGrid
                 " " + min.Longitude;
 
             p.Start();
-            using (StreamReader reader = p.StandardOutput)
+            using (var reader = p.StandardOutput)
             {
                 string result = reader.ReadToEnd();
                 Console.Write(result);
             }
 
-//            File.WriteAllLines(pythonApp, originalCode);
         }
     }
 }
